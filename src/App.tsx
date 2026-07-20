@@ -12,13 +12,13 @@ import { GlobeScene } from './components/GlobeScene'
 import './App.css'
 
 const STEPS = [
-  { id: 'route', label: 'Ruta' },
-  { id: 'documents', label: 'Docs' },
-  { id: 'seat', label: 'Asiento' },
-  { id: 'ticket', label: 'Boleto' },
-  { id: 'gate', label: 'Puerta' },
-  { id: 'flight', label: 'Vuelo' },
-  { id: 'landed', label: 'Llegada' },
+  { id: 'route', label: 'Ruta', short: '1' },
+  { id: 'documents', label: 'Docs', short: '2' },
+  { id: 'seat', label: 'Asiento', short: '3' },
+  { id: 'ticket', label: 'Boleto', short: '4' },
+  { id: 'gate', label: 'Puerta', short: '5' },
+  { id: 'flight', label: 'Vuelo', short: '6' },
+  { id: 'landed', label: 'Llegada', short: '7' },
 ] as const
 
 function Shell() {
@@ -55,7 +55,8 @@ function Shell() {
                   key={s.id}
                   className={`step-pill ${i <= activeIdx ? 'on' : ''} ${s.id === step ? 'current' : ''}`}
                 >
-                  {s.label}
+                  <span className="step-full">{s.label}</span>
+                  <span className="step-short">{s.short}</span>
                 </span>
               ))}
             </nav>
@@ -63,7 +64,7 @@ function Shell() {
         </header>
       )}
 
-      <main className={`layout ${immersive ? 'layout-flight' : ''}`}>
+      <main className={`layout ${immersive ? 'layout-flight' : ''} step-${step}`}>
         <div className="stage">
           <AnimatePresence mode="wait">
             {step === 'welcome' && <Welcome key="welcome" />}

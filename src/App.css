@@ -49,6 +49,7 @@ button {
 .app-shell {
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -71,9 +72,17 @@ button {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 30% 40%, transparent 0%, rgba(3, 9, 20, 0.35) 55%, rgba(3, 9, 20, 0.78) 100%),
-    linear-gradient(90deg, rgba(3, 9, 20, 0.72) 0%, rgba(3, 9, 20, 0.25) 55%, rgba(3, 9, 20, 0.55) 100%);
+    radial-gradient(ellipse at 55% 45%, transparent 0%, rgba(3, 9, 20, 0.2) 45%, rgba(3, 9, 20, 0.72) 100%),
+    linear-gradient(90deg, rgba(3, 9, 20, 0.55) 0%, rgba(3, 9, 20, 0.12) 50%, rgba(3, 9, 20, 0.35) 100%);
   pointer-events: none;
+}
+
+.step-short {
+  display: none;
+}
+
+.step-full {
+  display: inline;
 }
 
 .topbar {
@@ -712,13 +721,14 @@ select:focus {
   position: relative;
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
 }
 
 .flight-globe {
   position: absolute;
   inset: 0;
-  min-height: 100vh;
+  min-height: 100%;
   border: none;
   border-radius: 0;
   box-shadow: none;
@@ -728,10 +738,15 @@ select:focus {
   position: relative;
   z-index: 2;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 1.1rem 1.25rem 1.25rem;
+  padding-top: max(1.1rem, env(safe-area-inset-top));
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  padding-left: max(1.25rem, env(safe-area-inset-left));
+  padding-right: max(1.25rem, env(safe-area-inset-right));
   pointer-events: none;
 }
 
@@ -1061,13 +1076,135 @@ select:focus {
   .layout {
     grid-template-columns: 1fr;
     justify-content: stretch;
+    padding: 0.35rem 0.85rem 1.1rem;
+    padding-bottom: max(1.1rem, env(safe-area-inset-bottom));
+  }
+
+  .layout:not(.layout-flight) {
+    align-items: end;
+  }
+
+  .app-shell:not(.immersive) .world-veil {
+    background:
+      linear-gradient(180deg, rgba(3, 9, 20, 0.15) 0%, rgba(3, 9, 20, 0.2) 42%, rgba(3, 9, 20, 0.88) 72%),
+      radial-gradient(ellipse at 50% 28%, transparent 0%, rgba(3, 9, 20, 0.35) 70%);
+  }
+
+  .panel {
+    max-height: min(62dvh, 640px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 1.15rem 1.15rem 0.9rem 0.9rem;
+    padding: 1.2rem 1.15rem calc(1.2rem + env(safe-area-inset-bottom));
+  }
+
+  .app-shell.step-welcome .panel {
+    max-height: none;
+  }
+
+  .topbar {
+    flex-direction: row;
+    align-items: center;
+    padding: 0.75rem 0.9rem;
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+
+  .brand {
+    font-size: 0.8rem;
+  }
+
+  .stepper {
+    gap: 0.25rem;
+    max-width: 58%;
+  }
+
+  .step-pill {
+    padding: 0.28rem 0.45rem;
+    font-size: 0.65rem;
+  }
+
+  .step-full {
+    display: none;
+  }
+
+  .step-short {
+    display: inline;
+  }
+
+  .step-pill.current .step-full {
+    display: inline;
+  }
+
+  .step-pill.current .step-short {
+    display: none;
   }
 
   .field-grid,
   .session-grid,
-  .landing-card,
-  .flight-hud {
+  .landing-card {
     grid-template-columns: 1fr;
+  }
+
+  .flight-hud {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem;
+    width: 100%;
+  }
+
+  .flight-hud .hud-card.center {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
+  .hud-card {
+    padding: 0.65rem 0.75rem;
+    border-radius: 0.85rem;
+  }
+
+  .hud-card strong {
+    font-size: 0.95rem;
+  }
+
+  .flight-top {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.85rem 0.9rem;
+  }
+
+  .flight-top h2 {
+    font-size: 1.25rem;
+  }
+
+  .flight-top .lede {
+    font-size: 0.82rem;
+  }
+
+  .flight-tools {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .chip {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.72rem;
+  }
+
+  .flight-actions {
+    gap: 0.5rem;
+  }
+
+  .flight-actions .btn {
+    padding: 0.7rem 1rem;
+    font-size: 0.88rem;
+  }
+
+  .cabin-announce {
+    font-size: 0.88rem;
+    margin-top: 0.5rem;
+  }
+
+  .cabin-announce p {
+    font-size: 0.85rem;
   }
 
   .bp-full {
@@ -1085,17 +1222,84 @@ select:focus {
     flex-wrap: wrap;
   }
 
-  .topbar {
-    flex-direction: column;
-    align-items: flex-start;
+  .bp-route .code {
+    font-size: 1.25rem;
   }
 
   .window-frame {
-    inset: 8% 4%;
+    inset: 10% 5%;
+    border-width: 10px;
     border-radius: 28% / 10%;
   }
 
+  .window-caption {
+    font-size: 0.75rem;
+    white-space: normal;
+    text-align: center;
+    max-width: 80%;
+  }
+
   h1 {
-    max-width: 16ch;
+    max-width: 14ch;
+    font-size: clamp(1.7rem, 7vw, 2.2rem);
+  }
+
+  .welcome-stats {
+    gap: 0.75rem;
+  }
+
+  .seat-row {
+    grid-template-columns: 1.2rem repeat(3, 1.75rem) 0.85rem repeat(3, 1.75rem);
+    gap: 0.28rem;
+  }
+
+  .seat {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  .paused-badge {
+    font-size: 0.7rem;
+    padding: 0.6rem 0.9rem;
+    max-width: 90%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .layout:not(.layout-flight) {
+    padding-inline: 0.65rem;
+  }
+
+  .panel {
+    max-height: min(68dvh, 720px);
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions .btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .flight-actions {
+    flex-direction: column;
+  }
+
+  .flight-actions .btn {
+    width: 100%;
+  }
+}
+
+@media (min-width: 901px) {
+  .layout:not(.layout-flight) {
+    padding-left: clamp(1.25rem, 4vw, 3rem);
+  }
+
+  .panel {
+    max-width: 560px;
   }
 }

@@ -5,8 +5,10 @@ import type { ComponentRef } from 'react'
 import * as THREE from 'three'
 import type { Airport } from '../types'
 import { greatCirclePoints, latLonToVector3 } from '../utils/geo'
+import { Airplane } from './Airplane'
 
-const EARTH_RADIUS = 2.35
+const EARTH_RADIUS = 2.2
+
 const TEXTURE =
   'https://unpkg.com/three-globe@2.31.1/example/img/earth-blue-marble.jpg'
 const BUMP =
@@ -16,9 +18,15 @@ const NIGHT =
 const WATER =
   'https://unpkg.com/three-globe@2.31.1/example/img/earth-water.png'
 
+function useIsMobile() {
+  const { size } = useThree()
+  return size.width < 768
+}
+
 function Earth({ spinning, mapStyle }: { spinning: boolean; mapStyle: 'day' | 'night' }) {
   const earthRef = useRef<THREE.Mesh>(null)
-  const cloudRef = useRef<THREE.Mesh>(null)
+  const atmosRef = useRef<THREE.Mesh>(null)
+  const mobile = useIsMobile()
   const [colorMap, bumpMap, nightMap, waterMap] = useTexture([
     TEXTURE,
     BUMP,
@@ -26,71 +34,89 @@ function Earth({ spinning, mapStyle }: { spinning: boolean; mapStyle: 'day' | 'n
     WATER,
   ])
   const night = mapStyle === 'night'
+  const segs = mobile ? 48 : 96
+
+  useEffect(() => {
+    colorMap.colorSpace = THREE.SRGBColorSpace
+    nightMap.colorSpace = THREE.SRGBColorSpace
+    colorMap.anisotropy = 8
+    nightMap.anisotropy = 8
+    bumpMap.anisotropy = 4
+  }, [colorMap, bumpMap, nightMap])
 
   useFrame((_, delta) => {
     if (!spinning) return
-    if (earthRef.current) earthRef.current.rotation.y += delta * 0.04
-    if (cloudRef.current) cloudRef.current.rotation.y += delta * 0.055
+    if (earthRef.current) earthRef.current.rotation.y += delta * 0.035
+    if (atmosRef.current) atmosRef.current.rotation.y += delta * 0.02
   })
 
   return (
     <group>
       <mesh ref={earthRef}>
-        <sphereGeometry args={[EARTH_RADIUS, 72, 72]} />
-        <meshPhongMaterial
+        <sphereGeometry args={[EARTH_RADIUS, segs, segs]} />
+        <meshStandardMaterial
           map={night ? nightMap : colorMap}
           bumpMap={bumpMap}
-          bumpScale={night ? 0.03 : 0.055}
-          specularMap={waterMap}
-          specular={new THREE.Color(night ? '#111822' : '#223344')}
-          shininess={night ? 6 : 14}
+          bumpScale={night ? 0.02 : 0.045}
+          roughnessMap={waterMap}
+          roughness={night ? 0.92 : 0.78}
+          metalness={0.05}
           emissiveMap={nightMap}
-          emissive={new THREE.Color(night ? '#ffb56a' : '#ffc98a')}
-          emissiveIntensity={night ? 1.15 : 0.28}
+          emissive={new THREE.Color(night ? '#ffb56a' : '#ffd7a0')}
+          emissiveIntensity={night ? 1.35 : 0.22}
         />
       </mesh>
-      <mesh ref={cloudRef} scale={1.012}>
-        <sphereGeometry args={[EARTH_RADIUS, 56, 56]} />
-        <meshPhongMaterial
-          map={waterMap}
+
+      {/* Soft atmosphere rim */}
+      <mesh scale={1.045}>
+        <sphereGeometry args={[EARTH_RADIUS, 32, 32]} />
+        <meshBasicMaterial
+          color={night ? '#3b6ea8' : '#7ec8ff'}
           transparent
-          opacity={night ? 0.08 : 0.18}
+          opacity={night ? 0.14 : 0.11}
+          side={THREE.BackSide}
           depthWrite={false}
         />
       </mesh>
-      <mesh scale={1.035}>
+
+      {/* Thin haze shell */}
+      <mesh ref={atmosRef} scale={1.018}>
         <sphereGeometry args={[EARTH_RADIUS, 32, 32]} />
         <meshBasicMaterial
-          color={night ? '#1a3a6a' : '#5eb8ff'}
+          color="#dcefff"
           transparent
-          opacity={night ? 0.1 : 0.07}
-          side={THREE.BackSide}
+          opacity={night ? 0.03 : 0.06}
+          depthWrite={false}
         />
       </mesh>
     </group>
   )
 }
 
-function AirportMarker({
-  airport,
-  color,
-}: {
-  airport: Airport
-  color: string
-}) {
+function AirportMarker({ airport, color }: { airport: Airport; color: string }) {
   const pos = useMemo(
-    () => latLonToVector3(airport.lat, airport.lon, EARTH_RADIUS * 1.018),
+    () => latLonToVector3(airport.lat, airport.lon, EARTH_RADIUS * 1.016),
     [airport],
   )
+  const quat = useMemo(() => {
+    const q = new THREE.Quaternion()
+    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pos.clone().normalize())
+    return q
+  }, [pos])
+
   return (
-    <group position={pos}>
+    <group position={pos} quaternion={quat}>
       <mesh>
-        <sphereGeometry args={[0.032, 16, 16]} />
+        <sphereGeometry args={[0.028, 16, 16]} />
         <meshBasicMaterial color={color} />
       </mesh>
-      <mesh>
-        <ringGeometry args={[0.045, 0.065, 24]} />
-        <meshBasicMaterial color={color} transparent opacity={0.55} side={THREE.DoubleSide} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.001, 0]}>
+        <ringGeometry args={[0.04, 0.058, 28]} />
+        <meshBasicMaterial color={color} transparent opacity={0.7} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, 0.05, 0]}>
+        <cylinderGeometry args={[0.004, 0.004, 0.1, 8]} />
+        <meshBasicMaterial color={color} transparent opacity={0.85} />
       </mesh>
     </group>
   )
@@ -107,6 +133,7 @@ function FlightPath({
   progress: number
   followCamera: boolean
 }) {
+  const mobile = useIsMobile()
   const points = useMemo(
     () =>
       greatCirclePoints(
@@ -115,64 +142,78 @@ function FlightPath({
         destination.lat,
         destination.lon,
         EARTH_RADIUS,
-        180,
+        200,
       ),
     [origin, destination],
   )
 
   const curve = useMemo(() => new THREE.CatmullRomCurve3(points), [points])
 
-  const trail = useMemo(() => {
-    const geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(180))
-    const mat = new THREE.LineBasicMaterial({
+  const tube = useMemo(() => {
+    const geo = new THREE.TubeGeometry(curve, 200, mobile ? 0.012 : 0.01, 8, false)
+    const mat = new THREE.MeshBasicMaterial({
       color: '#f5d56a',
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.92,
     })
-    return new THREE.Line(geo, mat)
-  }, [curve])
+    return new THREE.Mesh(geo, mat)
+  }, [curve, mobile])
 
   const planeRef = useRef<THREE.Group>(null)
   const { camera } = useThree()
-  const controlsTarget = useRef(new THREE.Vector3())
+  const tmp = useMemo(
+    () => ({
+      pos: new THREE.Vector3(),
+      look: new THREE.Vector3(),
+      forward: new THREE.Vector3(),
+      up: new THREE.Vector3(),
+      right: new THREE.Vector3(),
+      trueUp: new THREE.Vector3(),
+      desired: new THREE.Vector3(),
+      matrix: new THREE.Matrix4(),
+      target: new THREE.Vector3(),
+    }),
+    [],
+  )
 
   useFrame(() => {
     if (!planeRef.current) return
     const t = Math.min(Math.max(progress, 0), 0.999)
-    const pos = curve.getPointAt(t)
-    const look = curve.getPointAt(Math.min(t + 0.014, 1))
-    planeRef.current.position.copy(pos)
-    planeRef.current.lookAt(look)
+    curve.getPointAt(t, tmp.pos)
+    curve.getPointAt(Math.min(t + 0.012, 1), tmp.look)
+
+    tmp.forward.copy(tmp.look).sub(tmp.pos).normalize()
+    tmp.up.copy(tmp.pos).normalize()
+    tmp.right.crossVectors(tmp.forward, tmp.up).normalize()
+    if (tmp.right.lengthSq() < 0.001) {
+      tmp.right.set(1, 0, 0)
+    }
+    tmp.trueUp.crossVectors(tmp.right, tmp.forward).normalize()
+    // Model faces +Z; basis = (right, up, forward)
+    tmp.matrix.makeBasis(tmp.right, tmp.trueUp, tmp.forward)
+    planeRef.current.position.copy(tmp.pos)
+    planeRef.current.quaternion.setFromRotationMatrix(tmp.matrix)
 
     if (followCamera) {
-      const outward = pos.clone().normalize()
-      const desired = pos
-        .clone()
-        .add(outward.multiplyScalar(1.55))
-        .add(new THREE.Vector3(0, 0.55, 0))
-      camera.position.lerp(desired, 0.045)
-      controlsTarget.current.lerp(pos, 0.08)
-      camera.lookAt(controlsTarget.current)
+      const dist = mobile ? 1.9 : 1.45
+      const lift = mobile ? 0.7 : 0.5
+      tmp.desired
+        .copy(tmp.pos)
+        .addScaledVector(tmp.up, dist * 0.55 + lift * 0.2)
+        .addScaledVector(tmp.forward, -dist * 0.85)
+        .addScaledVector(tmp.trueUp, lift)
+      camera.position.lerp(tmp.desired, 0.06)
+      tmp.target.copy(tmp.pos).addScaledVector(tmp.forward, 0.35)
+      camera.lookAt(tmp.target)
     }
   })
 
   return (
     <group>
-      <primitive object={trail} />
+      <primitive object={tube} />
       <group ref={planeRef}>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.028, 0.11, 10]} />
-          <meshStandardMaterial color="#f4f7fb" metalness={0.7} roughness={0.25} />
-        </mesh>
-        <mesh position={[0, 0, 0]} rotation={[0, 0, 0]}>
-          <boxGeometry args={[0.16, 0.008, 0.035]} />
-          <meshStandardMaterial color="#c5d0dc" metalness={0.5} roughness={0.35} />
-        </mesh>
-        <mesh position={[0, -0.02, -0.02]}>
-          <boxGeometry args={[0.05, 0.006, 0.04]} />
-          <meshStandardMaterial color="#9aabbc" />
-        </mesh>
-        <pointLight color="#fff4cc" intensity={0.55} distance={1.2} />
+        <Airplane scale={mobile ? 1.55 : 1.25} />
+        <pointLight color="#fff4cc" intensity={0.65} distance={1.4} />
       </group>
     </group>
   )
@@ -180,21 +221,33 @@ function FlightPath({
 
 function CameraRig({ mode }: { mode: 'idle' | 'preview' | 'flight' }) {
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null)
+  const mobile = useIsMobile()
+  const { camera } = useThree()
+
   useEffect(() => {
     if (controls.current) {
       controls.current.enabled = mode !== 'flight'
     }
-  }, [mode])
+    if (mode !== 'flight') {
+      const z = mobile ? (mode === 'preview' ? 7.4 : 8.2) : mode === 'preview' ? 6.4 : 6.8
+      camera.position.set(0, mobile ? 0.35 : 0.55, z)
+    }
+  }, [mode, mobile, camera])
+
   return (
     <OrbitControls
       ref={controls}
       enablePan={false}
-      minDistance={4.4}
-      maxDistance={11}
+      enableZoom
+      minDistance={mobile ? 5.2 : 4.2}
+      maxDistance={mobile ? 12 : 11}
+      minPolarAngle={0.35}
+      maxPolarAngle={Math.PI - 0.35}
       autoRotate={mode === 'idle'}
-      autoRotateSpeed={0.28}
+      autoRotateSpeed={0.25}
       enableDamping
-      dampingFactor={0.06}
+      dampingFactor={0.08}
+      rotateSpeed={mobile ? 0.55 : 0.7}
     />
   )
 }
@@ -217,31 +270,39 @@ export function GlobeScene({
   className,
 }: GlobeSceneProps) {
   const night = mapStyle === 'night'
+
   return (
     <div className={className ?? 'globe-canvas'}>
-      <Canvas camera={{ position: [0, 0.8, 6.8], fov: 40 }} dpr={[1, 1.8]}>
+      <Canvas
+        camera={{ position: [0, 0.55, 6.8], fov: 42, near: 0.1, far: 200 }}
+        dpr={[1, 1.75]}
+        gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+        style={{ touchAction: 'none' }}
+      >
         <color attach="background" args={[night ? '#01040c' : '#020617']} />
-        <fog attach="fog" args={[night ? '#01040c' : '#020617', 8, 22]} />
-        <ambientLight intensity={night ? 0.12 : 0.32} />
+        <fog attach="fog" args={[night ? '#01040c' : '#020617', 10, 28]} />
+
+        <ambientLight intensity={night ? 0.18 : 0.42} />
         <directionalLight
-          position={[6, 3.5, 4]}
-          intensity={night ? 0.25 : 1.55}
-          color={night ? '#8899bb' : '#fff6e8'}
+          position={[5.5, 3.2, 4.5]}
+          intensity={night ? 0.35 : 1.85}
+          color={night ? '#9aabcc' : '#fff4e5'}
         />
-        <directionalLight
-          position={[-5, -1, -3]}
-          intensity={night ? 0.45 : 0.25}
-          color="#6eb6ff"
+        <directionalLight position={[-4, -1.5, -2]} intensity={night ? 0.35 : 0.28} color="#6eb6ff" />
+        <hemisphereLight
+          args={[night ? '#1a2740' : '#b8d4ff', night ? '#05080f' : '#1a2a1a', night ? 0.35 : 0.45]}
         />
+
         <Stars
-          radius={100}
-          depth={50}
-          count={night ? 5600 : 4200}
-          factor={night ? 3.8 : 3.2}
+          radius={120}
+          depth={60}
+          count={night ? 5000 : 3200}
+          factor={night ? 3.6 : 2.8}
           saturation={0}
           fade
-          speed={0.45}
+          speed={0.4}
         />
+
         <Suspense fallback={null}>
           <Earth spinning={mode === 'idle'} mapStyle={mapStyle} />
           {origin && <AirportMarker airport={origin} color="#5eead4" />}
@@ -255,6 +316,7 @@ export function GlobeScene({
             />
           )}
         </Suspense>
+
         <CameraRig mode={mode} />
       </Canvas>
     </div>
