@@ -1,4 +1,3 @@
-import * as THREE from 'three'
 import type { Airport } from '../types'
 
 const EARTH_KM = 6371
@@ -28,35 +27,64 @@ export function formatDuration(ms: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-export function latLonToVector3(lat: number, lon: number, radius: number): THREE.Vector3 {
-  const phi = (90 - lat) * (Math.PI / 180)
-  const theta = (lon + 180) * (Math.PI / 180)
-  return new THREE.Vector3(
-    -radius * Math.sin(phi) * Math.cos(theta),
-    radius * Math.cos(phi),
-    radius * Math.sin(phi) * Math.sin(theta),
-  )
+function toRad(d: number) {
+  return (d * Math.PI) / 180
 }
 
-/** Great-circle arc points between two airports on a sphere */
-export function greatCirclePoints(
+function toDeg(r: number) {
+  return (r * 180) / Math.PI
+}
+
+/** Spherical interpolation between two lat/lon points (correct great-circle). */
+export function interpolateGreatCircle(
   lat1: number,
   lon1: number,
   lat2: number,
   lon2: number,
-  radius: number,
-  segments = 128,
-): THREE.Vector3[] {
-  const start = latLonToVector3(lat1, lon1, 1).normalize()
-  const end = latLonToVector3(lat2, lon2, 1).normalize()
-  const points: THREE.Vector3[] = []
+  t: number,
+): { lat: number; lon: number } {
+  const φ1 = toRad(lat1)
+  const λ1 = toRad(lon1)
+  const φ2 = toRad(lat2)
+  const λ2 = toRad(lon2)
 
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments
-    const point = new THREE.Vector3().copy(start).lerp(end, t).normalize()
-    const lift = 1 + 0.045 * Math.sin(Math.PI * t)
-    points.push(point.multiplyScalar(radius * lift))
+  const x1 = Math.cos(φ1) * Math.cos(λ1)
+  const y1 = Math.cos(φ1) * Math.sin(λ1)
+  const z1 = Math.sin(φ1)
+
+  const x2 = Math.cos(φ2) * Math.cos(λ2)
+  const y2 = Math.cos(φ2) * Math.sin(λ2)
+  const z2 = Math.sin(φ2)
+
+  const dot = Math.min(1, Math.max(-1, x1 * x2 + y1 * y2 + z1 * z2))
+  const ω = Math.acos(dot)
+
+  if (ω < 1e-8) return { lat: lat1, lon: lon1 }
+
+  const sinω = Math.sin(ω)
+  const a = Math.sin((1 - t) * ω) / sinω
+  const b = Math.sin(t * ω) / sinω
+
+  const x = a * x1 + b * x2
+  const y = a * y1 + b * y2
+  const z = a * z1 + b * z2
+
+  return {
+    lat: toDeg(Math.atan2(z, Math.sqrt(x * x + y * y))),
+    lon: toDeg(Math.atan2(y, x)),
   }
+}
 
-  return points
+export function greatCircleArc(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+  segments = 64,
+): { lat: number; lon: number }[] {
+  const pts: { lat: number; lon: number }[] = []
+  for (let i = 0; i <= segments; i++) {
+    pts.push(interpolateGreatCircle(lat1, lon1, lat2, lon2, i / segments))
+  }
+  return pts
 }

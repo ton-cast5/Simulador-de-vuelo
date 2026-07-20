@@ -1,8 +1,15 @@
 import { motion } from 'framer-motion'
 import { useFlight } from '../context/FlightContext'
 
+import { unlockCabinAudio } from '../utils/cabinAudio'
+
 export function BoardingGate() {
   const { booking, setStep, startFlight } = useFlight()
+
+  const onBoard = async () => {
+    await unlockCabinAudio()
+    startFlight()
+  }
 
   return (
     <motion.section
@@ -47,7 +54,7 @@ export function BoardingGate() {
         <button type="button" className="btn ghost" onClick={() => setStep('ticket')}>
           Atrás
         </button>
-        <button type="button" className="btn primary" onClick={startFlight}>
+        <button type="button" className="btn primary" onClick={onBoard}>
           Despegar y entrar en foco
         </button>
       </div>

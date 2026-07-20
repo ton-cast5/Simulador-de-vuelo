@@ -1,23 +1,56 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useFlight } from '../context/FlightContext'
 
+const TEAR_THRESHOLD = 72
+
 export function BoardingPass() {
   const { booking, tearTicket, setStep } = useFlight()
-  const [tearing, setTearing] = useState(false)
+  const [dragX, setDragX] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const startX = useRef(0)
+  const startY = useRef(0)
+  const tornAnim = booking.ticketTorn
 
   useEffect(() => {
     if (!booking.ticketTorn) return
-    const t = window.setTimeout(() => setStep('gate'), 1600)
+    const t = window.setTimeout(() => setStep('gate'), 1800)
     return () => window.clearTimeout(t)
   }, [booking.ticketTorn, setStep])
 
-  const onTear = () => {
-    if (booking.ticketTorn || tearing) return
-    setTearing(true)
-    window.setTimeout(() => {
-      tearTicket()
-    }, 700)
+  const finishTear = useCallback(() => {
+    if (booking.ticketTorn) return
+    tearTicket()
+  }, [booking.ticketTorn, tearTicket])
+
+  const onPointerDown = (e: ReactPointerEvent) => {
+    if (booking.ticketTorn) return
+    e.currentTarget.setPointerCapture(e.pointerId)
+    startX.current = e.clientX
+    startY.current = e.clientY
+    setDragging(true)
+  }
+
+  const onPointerMove = (e: ReactPointerEvent) => {
+    if (!dragging || booking.ticketTorn) return
+    const dx = e.clientX - startX.current
+    const dy = e.clientY - startY.current
+    // Desktop: drag right. Mobile (stub below): drag down also counts.
+    const dist = Math.max(0, dx, dy * 0.85)
+    setDragX(dist)
+    if (dist >= TEAR_THRESHOLD) {
+      setDragging(false)
+      setDragX(TEAR_THRESHOLD + 40)
+      finishTear()
+    }
+  }
+
+  const onPointerUp = () => {
+    if (booking.ticketTorn) return
+    setDragging(false)
+    if (dragX < TEAR_THRESHOLD) {
+      setDragX(0)
+    }
   }
 
   const stub = (
@@ -106,40 +139,55 @@ export function BoardingPass() {
       <h2>Tu pase de abordar</h2>
       <p className="lede">
         {booking.ticketTorn
-          ? 'Boleto sellado y cortado. Dirígete a la puerta.'
-          : 'Presenta el boleto en el mostrador para que te lo corten.'}
+          ? 'Boleto cortado. Dirígete a la puerta.'
+          : 'Arrastra el talón hacia la derecha para cortar tu boleto.'}
       </p>
 
-      <div className={`boarding-pass ${tearing || booking.ticketTorn ? 'torn' : ''}`}>
+      <div className={`boarding-pass ${tornAnim ? 'torn' : 'interactive'}`}>
         <AnimatePresence>
           {!booking.ticketTorn ? (
-            <motion.div
-              className="bp-full"
-              key="full"
-              animate={tearing ? { x: [0, -6, 8, -4, 0], rotate: [0, -0.5, 0.8, 0] } : {}}
-              transition={{ duration: 0.65 }}
-            >
-              {main}
-              <div className="bp-perforation" aria-hidden />
-              {stub}
-            </motion.div>
+            <div className="bp-full" key="full">
+              <div className="bp-main-wrap">{main}</div>
+              <div className="bp-perforation" aria-hidden>
+                <span className="bp-cut-hint">✂ corta</span>
+              </div>
+              <div
+                className="bp-stub-wrap"
+                style={{
+                  transform: `translateX(${dragX}px) rotate(${dragX * 0.08}deg)`,
+                }}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerUp}
+                role="slider"
+                aria-valuemin={0}
+                aria-valuemax={TEAR_THRESHOLD}
+                aria-valuenow={Math.round(dragX)}
+                aria-label="Arrastra para cortar el boleto"
+                tabIndex={0}
+              >
+                {stub}
+                <div className="bp-drag-affordance">⟶</div>
+              </div>
+            </div>
           ) : (
             <>
               <motion.div
                 className="bp-piece left"
                 key="left"
-                initial={{ x: 0, rotate: 0, opacity: 1 }}
-                animate={{ x: -40, rotate: -8, opacity: 0.95 }}
-                transition={{ type: 'spring', stiffness: 120, damping: 14 }}
+                initial={{ x: 0, rotate: 0 }}
+                animate={{ x: -28, rotate: -6, y: 4 }}
+                transition={{ type: 'spring', stiffness: 90, damping: 14 }}
               >
                 {main}
               </motion.div>
               <motion.div
                 className="bp-piece right"
                 key="right"
-                initial={{ x: 0, rotate: 0, opacity: 1 }}
-                animate={{ x: 50, y: 20, rotate: 12, opacity: 0.9 }}
-                transition={{ type: 'spring', stiffness: 110, damping: 12 }}
+                initial={{ x: dragX, rotate: dragX * 0.08 }}
+                animate={{ x: 56, y: 28, rotate: 14 }}
+                transition={{ type: 'spring', stiffness: 80, damping: 12 }}
               >
                 {stub}
               </motion.div>
@@ -148,17 +196,28 @@ export function BoardingPass() {
         </AnimatePresence>
       </div>
 
+      {!booking.ticketTorn && (
+        <p className="tear-hint">Mantén y desliza el talón por la línea de puntos</p>
+      )}
+
       <div className="actions">
         <button type="button" className="btn ghost" onClick={() => setStep('seat')}>
           Atrás
         </button>
-        {!booking.ticketTorn ? (
-          <button type="button" className="btn primary" onClick={onTear} disabled={tearing}>
-            {tearing ? 'Cortando boleto…' : 'Cortar boleto en el control'}
-          </button>
-        ) : (
+        {booking.ticketTorn ? (
           <button type="button" className="btn primary" onClick={() => setStep('gate')}>
             Ir a la puerta
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => {
+              setDragX(TEAR_THRESHOLD + 20)
+              finishTear()
+            }}
+          >
+            Cortar con un toque
           </button>
         )}
       </div>

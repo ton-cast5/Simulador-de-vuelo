@@ -1,9 +1,15 @@
 import { motion } from 'framer-motion'
 import { useFlight } from '../context/FlightContext'
+import { unlockCabinAudio } from '../utils/cabinAudio'
 
 export function Welcome() {
   const { setStep, log } = useFlight()
   const miles = log.reduce((acc, e) => acc + e.distanceKm, 0)
+
+  const start = async () => {
+    await unlockCabinAudio()
+    setStep('route')
+  }
 
   return (
     <motion.section
@@ -30,7 +36,7 @@ export function Welcome() {
         </div>
       </div>
 
-      <button type="button" className="btn primary" onClick={() => setStep('route')}>
+      <button type="button" className="btn primary" onClick={start}>
         Reservar vuelo
       </button>
     </motion.section>

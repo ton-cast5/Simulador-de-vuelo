@@ -57,7 +57,11 @@ export function FlightView() {
           className="globe-canvas flight-globe"
         />
       ) : (
-        <WindowSeat progress={session.progress} />
+        <WindowSeat
+          progress={session.progress}
+          origin={booking.origin}
+          destination={booking.destination}
+        />
       )}
 
       <div className="flight-overlay">

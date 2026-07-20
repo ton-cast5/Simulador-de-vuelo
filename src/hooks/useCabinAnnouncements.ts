@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { speakCabin, stopCabinSpeech } from '../utils/cabinAudio'
 
 export interface AnnouncementBeat {
   at: number
@@ -24,21 +25,7 @@ export const DEFAULT_BEATS: AnnouncementBeat[] = [
   },
 ]
 
-function speak(text: string) {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return
-  window.speechSynthesis.cancel()
-  const utter = new SpeechSynthesisUtterance(text)
-  utter.lang = 'es-MX'
-  utter.rate = 0.92
-  utter.pitch = 0.95
-  utter.volume = 0.85
-  const voices = window.speechSynthesis.getVoices()
-  const es = voices.find((v) => v.lang.startsWith('es'))
-  if (es) utter.voice = es
-  window.speechSynthesis.speak(utter)
-}
-
-/** Milestone cabin announcements (visual + speech). */
+/** Milestone cabin announcements (chime + speech on all devices after unlock). */
 export function useCabinAnnouncements(
   flightKey: number | null,
   progress: number,
@@ -54,7 +41,7 @@ export function useCabinAnnouncements(
     fired.current = new Set()
     onAnnounceRef.current(null)
     return () => {
-      window.speechSynthesis?.cancel()
+      stopCabinSpeech()
       onAnnounceRef.current(null)
     }
   }, [flightKey])
@@ -66,8 +53,8 @@ export function useCabinAnnouncements(
       if (progress >= beat.at && !fired.current.has(beat.at)) {
         fired.current.add(beat.at)
         onAnnounceRef.current(beat.text)
-        speak(beat.text)
-        const clearId = window.setTimeout(() => onAnnounceRef.current(null), 7000)
+        speakCabin(beat.text)
+        const clearId = window.setTimeout(() => onAnnounceRef.current(null), 8000)
         return () => window.clearTimeout(clearId)
       }
     }

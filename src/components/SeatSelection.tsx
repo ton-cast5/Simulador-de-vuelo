@@ -1,27 +1,45 @@
 import { motion } from 'framer-motion'
 import { useFlight } from '../context/FlightContext'
 
-const ROWS = Array.from({ length: 12 }, (_, i) => i + 1)
-const LEFT = ['A', 'B', 'C']
-const RIGHT = ['D', 'E', 'F']
-const OCCUPIED = new Set(['2A', '2F', '5C', '5D', '7B', '8E', '10A', '11F', '3C', '6D'])
+const ROWS = Array.from({ length: 14 }, (_, i) => i + 1)
+const OCCUPIED = new Set([
+  '1A',
+  '1F',
+  '2B',
+  '2E',
+  '4C',
+  '4D',
+  '5A',
+  '6F',
+  '7B',
+  '8C',
+  '8D',
+  '9E',
+  '11A',
+  '11F',
+  '12B',
+  '13C',
+  '14D',
+])
+const EXIT_ROWS = new Set([6, 7])
 
 export function SeatSelection() {
   const { booking, setSeat, setStep } = useFlight()
 
-  const renderSeat = (id: string, col: string) => {
+  const renderSeat = (id: string, col: string, side: 'window' | 'middle' | 'aisle') => {
     const taken = OCCUPIED.has(id)
     const selected = booking.seat === id
     return (
       <button
         key={id}
         type="button"
-        className={`seat ${taken ? 'taken' : ''} ${selected ? 'selected' : ''}`}
+        className={`seat-real ${side} ${taken ? 'taken' : ''} ${selected ? 'selected' : ''}`}
         disabled={taken}
         onClick={() => setSeat(id)}
         aria-label={`Asiento ${id}`}
       >
-        {col}
+        <span className="seat-back" />
+        <span className="seat-cushion">{col}</span>
       </button>
     )
   }
@@ -34,7 +52,7 @@ export function SeatSelection() {
     >
       <p className="eyebrow">Paso 3 · Asiento</p>
       <h2>Elige tu asiento</h2>
-      <p className="lede">Mapa de cabina · pasillo central entre C y D.</p>
+      <p className="lede">Cabina Economy · ventanilla, pasillo y salida de emergencia.</p>
 
       <div className="seat-legend">
         <span>
@@ -48,17 +66,52 @@ export function SeatSelection() {
         </span>
       </div>
 
-      <div className="cabin">
-        <div className="cabin-label">Frente · cabina</div>
-        {ROWS.map((row) => (
-          <div key={row} className="seat-row">
-            <span className="row-num">{row}</span>
-            {LEFT.map((col) => renderSeat(`${row}${col}`, col))}
-            <span className="aisle" aria-hidden />
-            {RIGHT.map((col) => renderSeat(`${row}${col}`, col))}
+      <div className="cabin-shell">
+        <div className="cabin-nose">Cabina · frente</div>
+        <div className="cabin-fuselage">
+          <div className="cabin-bins" aria-hidden />
+          <div className="cabin-cols-label">
+            <span>A</span>
+            <span>B</span>
+            <span>C</span>
+            <span className="aisle-label">pasillo</span>
+            <span>D</span>
+            <span>E</span>
+            <span>F</span>
           </div>
-        ))}
+
+          {ROWS.map((row) => (
+            <div key={row} className={`cabin-row ${EXIT_ROWS.has(row) ? 'exit' : ''}`}>
+              <span className="row-num">{row}</span>
+              <div className="seat-bank left">
+                {renderSeat(`${row}A`, 'A', 'window')}
+                {renderSeat(`${row}B`, 'B', 'middle')}
+                {renderSeat(`${row}C`, 'C', 'aisle')}
+              </div>
+              <div className="cabin-aisle">
+                {EXIT_ROWS.has(row) ? <span className="exit-tag">EXIT</span> : null}
+              </div>
+              <div className="seat-bank right">
+                {renderSeat(`${row}D`, 'D', 'aisle')}
+                {renderSeat(`${row}E`, 'E', 'middle')}
+                {renderSeat(`${row}F`, 'F', 'window')}
+              </div>
+            </div>
+          ))}
+          <div className="cabin-tail">Cola</div>
+        </div>
       </div>
+
+      {booking.seat && (
+        <p className="seat-picked">
+          Seleccionado: <strong>{booking.seat}</strong>
+          {booking.seat.endsWith('A') || booking.seat.endsWith('F')
+            ? ' · ventanilla'
+            : booking.seat.endsWith('C') || booking.seat.endsWith('D')
+              ? ' · pasillo'
+              : ' · centro'}
+        </p>
+      )}
 
       <div className="actions">
         <button type="button" className="btn ghost" onClick={() => setStep('documents')}>
