@@ -28,7 +28,7 @@ export function SeatSelection() {
 
   return (
     <motion.section
-      className="panel seats"
+      className="panel seats glass"
       initial={{ opacity: 0, x: 30 }}
       animate={{ opacity: 1, x: 0 }}
     >

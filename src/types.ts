@@ -6,6 +6,11 @@ export type Step =
   | 'ticket'
   | 'gate'
   | 'flight'
+  | 'landed'
+
+export type CabinView = 'globe' | 'window'
+export type MapStyle = 'day' | 'night'
+export type SessionMinutes = 3 | 25 | 45 | 90
 
 export interface Airport {
   code: string
@@ -35,8 +40,36 @@ export interface FlightBooking {
   boardingTime: string
   departureTime: string
   arrivalTime: string
+  durationLabel: string
+  distanceKm: number
+  sessionMinutes: SessionMinutes
   documentsVerified: boolean
   ticketTorn: boolean
+}
+
+export interface FlightSession {
+  startedAt: number | null
+  progress: number
+  paused: boolean
+  pureMode: boolean
+  cabinView: CabinView
+  ambienceOn: boolean
+  mapStyle: MapStyle
+  announcement: string | null
+}
+
+export interface FlightLogEntry {
+  id: string
+  flightNumber: string
+  origin: string
+  destination: string
+  originCity: string
+  destinationCity: string
+  seat: string
+  passenger: string
+  distanceKm: number
+  sessionMinutes: number
+  completedAt: string
 }
 
 export const emptyDocuments = (): PassengerDocs => ({
@@ -46,3 +79,10 @@ export const emptyDocuments = (): PassengerDocs => ({
   visaNumber: '',
   birthDate: '',
 })
+
+export const SESSION_OPTIONS: { minutes: SessionMinutes; label: string; hint: string }[] = [
+  { minutes: 3, label: 'Express', hint: '3 min · demo rápida' },
+  { minutes: 25, label: 'Focus', hint: '25 min · pomodoro' },
+  { minutes: 45, label: 'Deep', hint: '45 min · deep work' },
+  { minutes: 90, label: 'Long haul', hint: '90 min · sesión larga' },
+]

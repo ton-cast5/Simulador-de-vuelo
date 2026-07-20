@@ -2,18 +2,18 @@ import { motion } from 'framer-motion'
 import { useFlight } from '../context/FlightContext'
 
 export function BoardingGate() {
-  const { booking, setStep } = useFlight()
+  const { booking, setStep, startFlight } = useFlight()
 
   return (
     <motion.section
-      className="panel gate"
+      className="panel gate glass"
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
     >
       <p className="eyebrow">Paso 5 · Embarque</p>
       <h2>Puerta {booking.gate}</h2>
       <p className="lede">
-        Documentos y boleto verificados. Puedes ingresar al avión rumbo a{' '}
+        Documentos y boleto verificados. Sesión a bordo: {booking.sessionMinutes} min rumbo a{' '}
         {booking.destination?.city}.
       </p>
 
@@ -47,8 +47,8 @@ export function BoardingGate() {
         <button type="button" className="btn ghost" onClick={() => setStep('ticket')}>
           Atrás
         </button>
-        <button type="button" className="btn primary" onClick={() => setStep('flight')}>
-          Subir al avión y despegar
+        <button type="button" className="btn primary" onClick={startFlight}>
+          Despegar y entrar en foco
         </button>
       </div>
     </motion.section>

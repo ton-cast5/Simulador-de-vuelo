@@ -1,14 +1,27 @@
 import { motion } from 'framer-motion'
-import { airports, estimateFlightHours } from '../data/airports'
+import { airports, estimateFlightHours, routeDistanceKm } from '../data/airports'
 import { useFlight } from '../context/FlightContext'
+import { SESSION_OPTIONS } from '../types'
+import { formatDistance } from '../utils/geo'
 
 export function RouteSelect() {
-  const { booking, setOriginCode, setDestinationCode, confirmRoute, setStep } =
-    useFlight()
+  const {
+    booking,
+    setOriginCode,
+    setDestinationCode,
+    setSessionMinutes,
+    pickRandomRoute,
+    confirmRoute,
+    setStep,
+  } = useFlight()
 
   const hours =
     booking.origin && booking.destination
       ? estimateFlightHours(booking.origin, booking.destination)
+      : null
+  const km =
+    booking.origin && booking.destination
+      ? routeDistanceKm(booking.origin, booking.destination)
       : null
 
   const canContinue =
@@ -18,13 +31,17 @@ export function RouteSelect() {
 
   return (
     <motion.section
-      className="panel route"
+      className="panel route glass"
       initial={{ opacity: 0, x: 30 }}
       animate={{ opacity: 1, x: 0 }}
     >
       <p className="eyebrow">Paso 1 · Ruta</p>
-      <h2>Elige origen y destino</h2>
-      <p className="lede">Aeropuertos reales alrededor del mundo.</p>
+      <h2>Elige tu vuelo</h2>
+      <p className="lede">Aeropuertos reales. La duración de sesión marca tu foco a bordo.</p>
+
+      <button type="button" className="btn ghost random-btn" onClick={pickRandomRoute}>
+        Ruta sorpresa
+      </button>
 
       <div className="field-grid">
         <label>
@@ -62,13 +79,29 @@ export function RouteSelect() {
         </label>
       </div>
 
-      {canContinue && hours !== null && (
+      <p className="field-label">Duración de la sesión a bordo</p>
+      <div className="session-grid">
+        {SESSION_OPTIONS.map((opt) => (
+          <button
+            key={opt.minutes}
+            type="button"
+            className={`session-card ${booking.sessionMinutes === opt.minutes ? 'on' : ''}`}
+            onClick={() => setSessionMinutes(opt.minutes)}
+          >
+            <strong>{opt.label}</strong>
+            <span>{opt.hint}</span>
+          </button>
+        ))}
+      </div>
+
+      {canContinue && hours !== null && km !== null && (
         <div className="route-summary">
           <span>
             {booking.origin!.city} → {booking.destination!.city}
           </span>
           <span>
-            ~{Math.floor(hours)}h {Math.round((hours % 1) * 60)}m de vuelo
+            {formatDistance(km)} · vuelo real ~{Math.floor(hours)}h{' '}
+            {Math.round((hours % 1) * 60)}m
           </span>
         </div>
       )}

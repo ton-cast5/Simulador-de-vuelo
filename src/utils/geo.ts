@@ -1,4 +1,32 @@
 import * as THREE from 'three'
+import type { Airport } from '../types'
+
+const EARTH_KM = 6371
+
+export function distanceKm(a: Airport, b: Airport): number {
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180
+  const dLon = ((b.lon - a.lon) * Math.PI) / 180
+  const x =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((a.lat * Math.PI) / 180) *
+      Math.cos((b.lat * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2
+  return 2 * EARTH_KM * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))
+}
+
+export function formatDistance(km: number): string {
+  if (km < 1000) return `${Math.round(km)} km`
+  return `${(km / 1000).toFixed(1)} mil km`
+}
+
+export function formatDuration(ms: number): string {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000))
+  const h = Math.floor(totalSec / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
 
 export function latLonToVector3(lat: number, lon: number, radius: number): THREE.Vector3 {
   const phi = (90 - lat) * (Math.PI / 180)
@@ -26,8 +54,7 @@ export function greatCirclePoints(
   for (let i = 0; i <= segments; i++) {
     const t = i / segments
     const point = new THREE.Vector3().copy(start).lerp(end, t).normalize()
-    // Lift arc slightly above surface for visibility
-    const lift = 1 + 0.04 * Math.sin(Math.PI * t)
+    const lift = 1 + 0.045 * Math.sin(Math.PI * t)
     points.push(point.multiplyScalar(radius * lift))
   }
 

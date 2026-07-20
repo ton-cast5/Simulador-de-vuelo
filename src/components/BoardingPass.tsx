@@ -98,7 +98,7 @@ export function BoardingPass() {
 
   return (
     <motion.section
-      className="panel ticket"
+      className="panel ticket glass"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >

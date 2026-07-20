@@ -187,7 +187,7 @@ export function needsVisa(origin: Airport, destination: Airport): boolean {
   return origin.country !== destination.country
 }
 
-export function estimateFlightHours(origin: Airport, destination: Airport): number {
+export function routeDistanceKm(origin: Airport, destination: Airport): number {
   const R = 6371
   const dLat = ((destination.lat - origin.lat) * Math.PI) / 180
   const dLon = ((destination.lon - origin.lon) * Math.PI) / 180
@@ -196,12 +196,16 @@ export function estimateFlightHours(origin: Airport, destination: Airport): numb
     Math.cos((origin.lat * Math.PI) / 180) *
       Math.cos((destination.lat * Math.PI) / 180) *
       Math.sin(dLon / 2) ** 2
-  const km = 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return Math.max(1.2, km / 820)
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+export function estimateFlightHours(origin: Airport, destination: Airport): number {
+  return Math.max(1.2, routeDistanceKm(origin, destination) / 820)
 }
 
 export function generateFlightMeta(origin: Airport, destination: Airport) {
   const hours = estimateFlightHours(origin, destination)
+  const km = routeDistanceKm(origin, destination)
   const now = new Date()
   const depart = new Date(now.getTime() + 90 * 60 * 1000)
   const arrive = new Date(depart.getTime() + hours * 60 * 60 * 1000)
@@ -216,5 +220,6 @@ export function generateFlightMeta(origin: Airport, destination: Airport) {
     departureTime: fmt(depart),
     arrivalTime: fmt(arrive),
     durationLabel: `${Math.floor(hours)}h ${Math.round((hours % 1) * 60)}m`,
+    distanceKm: Math.round(km),
   }
 }

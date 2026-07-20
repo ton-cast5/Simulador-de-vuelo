@@ -7,6 +7,7 @@ import { SeatSelection } from './components/SeatSelection'
 import { BoardingPass } from './components/BoardingPass'
 import { BoardingGate } from './components/BoardingGate'
 import { FlightView } from './components/FlightView'
+import { Landing } from './components/Landing'
 import { GlobeScene } from './components/GlobeScene'
 import './App.css'
 
@@ -17,35 +18,52 @@ const STEPS = [
   { id: 'ticket', label: 'Boleto' },
   { id: 'gate', label: 'Puerta' },
   { id: 'flight', label: 'Vuelo' },
+  { id: 'landed', label: 'Llegada' },
 ] as const
 
 function Shell() {
-  const { step, booking } = useFlight()
-  const showSideGlobe = step !== 'flight' && step !== 'welcome'
+  const { step, booking, session } = useFlight()
+  const immersive = step === 'flight'
   const activeIdx = STEPS.findIndex((s) => s.id === step)
+  const showBgGlobe = !immersive
 
   return (
-    <div className={`app-shell step-${step}`}>
-      <header className="topbar">
-        <div className="brand">
-          <span className="brand-mark" aria-hidden />
-          <span>Simulador de Vuelo</span>
+    <div className={`app-shell step-${step} ${immersive ? 'immersive' : ''}`}>
+      {showBgGlobe && (
+        <div className="world-bg" aria-hidden>
+          <GlobeScene
+            origin={booking.origin}
+            destination={booking.destination}
+            mode={booking.origin && booking.destination ? 'preview' : 'idle'}
+            mapStyle={session.mapStyle}
+            className="globe-canvas world-globe"
+          />
+          <div className="world-veil" />
         </div>
-        {step !== 'welcome' && (
-          <nav className="stepper" aria-label="Progreso del viaje">
-            {STEPS.map((s, i) => (
-              <span
-                key={s.id}
-                className={`step-pill ${i <= activeIdx ? 'on' : ''} ${s.id === step ? 'current' : ''}`}
-              >
-                {s.label}
-              </span>
-            ))}
-          </nav>
-        )}
-      </header>
+      )}
 
-      <main className="layout">
+      {!immersive && (
+        <header className="topbar">
+          <div className="brand">
+            <span className="brand-mark" aria-hidden />
+            <span>SkyVoyage</span>
+          </div>
+          {step !== 'welcome' && (
+            <nav className="stepper" aria-label="Progreso del viaje">
+              {STEPS.map((s, i) => (
+                <span
+                  key={s.id}
+                  className={`step-pill ${i <= activeIdx ? 'on' : ''} ${s.id === step ? 'current' : ''}`}
+                >
+                  {s.label}
+                </span>
+              ))}
+            </nav>
+          )}
+        </header>
+      )}
+
+      <main className={`layout ${immersive ? 'layout-flight' : ''}`}>
         <div className="stage">
           <AnimatePresence mode="wait">
             {step === 'welcome' && <Welcome key="welcome" />}
@@ -55,29 +73,9 @@ function Shell() {
             {step === 'ticket' && <BoardingPass key="ticket" />}
             {step === 'gate' && <BoardingGate key="gate" />}
             {step === 'flight' && <FlightView key="flight" />}
+            {step === 'landed' && <Landing key="landed" />}
           </AnimatePresence>
         </div>
-
-        {showSideGlobe && (
-          <aside className="globe-aside">
-            <GlobeScene
-              origin={booking.origin}
-              destination={booking.destination}
-              mode={booking.origin && booking.destination ? 'preview' : 'idle'}
-            />
-            <p className="globe-hint">
-              {booking.origin && booking.destination
-                ? `${booking.origin.city} → ${booking.destination.city}`
-                : 'El mundo en tiempo real · gira para explorar'}
-            </p>
-          </aside>
-        )}
-
-        {step === 'welcome' && (
-          <aside className="globe-aside welcome-globe">
-            <GlobeScene mode="idle" />
-          </aside>
-        )}
       </main>
     </div>
   )

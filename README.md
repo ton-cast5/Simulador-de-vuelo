@@ -1,3 +1,3 @@
 # Simulador de Vuelo
 
-App web que simula el recorrido de un viaje aéreo: eliges aeropuertos reales de origen y destino, entregas tus documentos (pasaporte y visa si aplica), seleccionas asiento, recoges un pase de abordar con animación de corte del boleto, ingresas al avión por la puerta de embarque y ves la trayectoria del vuelo sobre un globo terrestre 3D.
+App web tipo Focus Flight: reservas un vuelo entre aeropuertos reales (o una ruta sorpresa), entregas documentos, eliges asiento, cortas el pase de abordar y mantienes el foco mientras el avión cruza un globo 3D día/noche, con HUD de tiempo/distancia, fases de vuelo, anuncios de cabina, vista de ventanilla, ambiente sonoro, aterrizaje y bitácora de vuelos.
