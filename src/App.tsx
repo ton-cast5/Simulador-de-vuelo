@@ -71,8 +71,14 @@ function Shell() {
         </header>
       )}
 
+      {/* Fullscreen cinematics — outside constrained stage */}
+      <AnimatePresence mode="wait">
+        {step === 'takeoff' && <TakeoffSequence key="takeoff" />}
+        {step === 'touchdown' && <TouchdownSequence key="touchdown" />}
+      </AnimatePresence>
+
       <main className={`layout ${immersive ? 'layout-flight' : ''} step-${step}`}>
-        <div className={`stage ${cinematic ? 'stage-cinema' : ''}`}>
+        <div className="stage">
           <AnimatePresence mode="wait">
             {step === 'welcome' && <Welcome key="welcome" />}
             {step === 'route' && <RouteSelect key="route" />}
@@ -80,9 +86,7 @@ function Shell() {
             {step === 'seat' && <SeatSelection key="seat" />}
             {step === 'ticket' && <BoardingPass key="ticket" />}
             {step === 'gate' && <BoardingGate key="gate" />}
-            {step === 'takeoff' && <TakeoffSequence key="takeoff" />}
             {step === 'flight' && <FlightView key="flight" />}
-            {step === 'touchdown' && <TouchdownSequence key="touchdown" />}
             {step === 'landed' && <Landing key="landed" />}
           </AnimatePresence>
         </div>

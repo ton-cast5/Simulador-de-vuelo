@@ -1,27 +1,25 @@
-import { motion } from 'framer-motion'
 import { useFlight } from '../context/FlightContext'
+import { PageMotion } from './PageMotion'
 
-const ROWS = Array.from({ length: 14 }, (_, i) => i + 1)
+const ROWS = Array.from({ length: 12 }, (_, i) => i + 1)
 const OCCUPIED = new Set([
   '1A',
   '1F',
   '2B',
   '2E',
-  '4C',
+  '3C',
   '4D',
   '5A',
   '6F',
   '7B',
-  '8C',
+  '7C',
   '8D',
   '9E',
-  '11A',
+  '10A',
   '11F',
   '12B',
-  '13C',
-  '14D',
 ])
-const EXIT_ROWS = new Set([6, 7])
+const EXIT_ROWS = new Set([5, 6])
 
 export function SeatSelection() {
   const { booking, setSeat, setStep } = useFlight()
@@ -45,14 +43,10 @@ export function SeatSelection() {
   }
 
   return (
-    <motion.section
-      className="panel seats glass"
-      initial={{ opacity: 0, x: 30 }}
-      animate={{ opacity: 1, x: 0 }}
-    >
+    <PageMotion className="panel seats glass">
       <p className="eyebrow">03 · Asiento</p>
       <h2>Elige tu lugar</h2>
-      <p className="lede">Cabina Economy · ventanilla, pasillo y filas de emergencia.</p>
+      <p className="lede">Mapa en forma de avión · ventanilla, pasillo y emergencias.</p>
 
       <div className="seat-legend">
         <span>
@@ -66,39 +60,51 @@ export function SeatSelection() {
         </span>
       </div>
 
-      <div className="cabin-shell">
-        <div className="cabin-nose">Cabina · frente</div>
-        <div className="cabin-fuselage">
-          <div className="cabin-bins" aria-hidden />
-          <div className="cabin-cols-label">
-            <span>A</span>
-            <span>B</span>
-            <span>C</span>
-            <span className="aisle-label">pasillo</span>
-            <span>D</span>
-            <span>E</span>
-            <span>F</span>
-          </div>
+      <div className="plane-map">
+        <div className="plane-nose" aria-hidden>
+          <span>COCKPIT</span>
+        </div>
 
-          {ROWS.map((row) => (
-            <div key={row} className={`cabin-row ${EXIT_ROWS.has(row) ? 'exit' : ''}`}>
-              <span className="row-num">{row}</span>
-              <div className="seat-bank left">
-                {renderSeat(`${row}A`, 'A', 'window')}
-                {renderSeat(`${row}B`, 'B', 'middle')}
-                {renderSeat(`${row}C`, 'C', 'aisle')}
-              </div>
-              <div className="cabin-aisle">
-                {EXIT_ROWS.has(row) ? <span className="exit-tag">EXIT</span> : null}
-              </div>
-              <div className="seat-bank right">
-                {renderSeat(`${row}D`, 'D', 'aisle')}
-                {renderSeat(`${row}E`, 'E', 'middle')}
-                {renderSeat(`${row}F`, 'F', 'window')}
-              </div>
+        <div className="plane-body">
+          <div className="plane-wing left" aria-hidden />
+          <div className="plane-wing right" aria-hidden />
+
+          <div className="plane-cabin">
+            <div className="cabin-cols-label">
+              <span />
+              <span>A</span>
+              <span>B</span>
+              <span>C</span>
+              <span className="aisle-label">│</span>
+              <span>D</span>
+              <span>E</span>
+              <span>F</span>
             </div>
-          ))}
-          <div className="cabin-tail">Cola</div>
+
+            {ROWS.map((row) => (
+              <div key={row} className={`cabin-row ${EXIT_ROWS.has(row) ? 'exit' : ''}`}>
+                <span className="row-num">{row}</span>
+                <div className="seat-bank left">
+                  {renderSeat(`${row}A`, 'A', 'window')}
+                  {renderSeat(`${row}B`, 'B', 'middle')}
+                  {renderSeat(`${row}C`, 'C', 'aisle')}
+                </div>
+                <div className="cabin-aisle">
+                  {EXIT_ROWS.has(row) ? <span className="exit-tag">EXIT</span> : null}
+                </div>
+                <div className="seat-bank right">
+                  {renderSeat(`${row}D`, 'D', 'aisle')}
+                  {renderSeat(`${row}E`, 'E', 'middle')}
+                  {renderSeat(`${row}F`, 'F', 'window')}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="plane-tail" aria-hidden>
+          <div className="fin" />
+          <span>TAIL</span>
         </div>
       </div>
 
@@ -126,6 +132,6 @@ export function SeatSelection() {
           Recoger boleto {booking.seat ? `(${booking.seat})` : ''}
         </button>
       </div>
-    </motion.section>
+    </PageMotion>
   )
 }

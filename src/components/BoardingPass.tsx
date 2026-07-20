@@ -1,26 +1,35 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { useFlight } from '../context/FlightContext'
 
-const TEAR_THRESHOLD = 72
+const TEAR_THRESHOLD = 96
 
 export function BoardingPass() {
   const { booking, tearTicket, setStep } = useFlight()
-  const [dragX, setDragX] = useState(0)
   const [dragging, setDragging] = useState(false)
+  const [rip, setRip] = useState(0)
   const startX = useRef(0)
   const startY = useRef(0)
   const tornAnim = booking.ticketTorn
 
+  const drag = useMotionValue(0)
+  const smooth = useSpring(drag, { stiffness: 210, damping: 22, mass: 0.85 })
+  const stubRotate = useTransform(smooth, [0, 140], [0, 14])
+  const stubY = useTransform(smooth, (v) => Math.sin(v / 9) * Math.min(5, v / 28))
+  const mainRotate = useTransform(smooth, [0, 140], [0, -3.2])
+  const tearGap = useTransform(smooth, [0, 140], [10, 26])
+  const mainShift = useTransform(smooth, (v) => -v * 0.1)
+
   useEffect(() => {
     if (!booking.ticketTorn) return
-    const t = window.setTimeout(() => setStep('gate'), 1800)
+    const t = window.setTimeout(() => setStep('gate'), 2000)
     return () => window.clearTimeout(t)
   }, [booking.ticketTorn, setStep])
 
   const finishTear = useCallback(() => {
     if (booking.ticketTorn) return
-    tearTicket()
+    setRip(1)
+    window.setTimeout(() => tearTicket(), 120)
   }, [booking.ticketTorn, tearTicket])
 
   const onPointerDown = (e: ReactPointerEvent) => {
@@ -35,12 +44,14 @@ export function BoardingPass() {
     if (!dragging || booking.ticketTorn) return
     const dx = e.clientX - startX.current
     const dy = e.clientY - startY.current
-    // Desktop: drag right. Mobile (stub below): drag down also counts.
-    const dist = Math.max(0, dx, dy * 0.85)
-    setDragX(dist)
+    const dist = Math.max(0, dx * 0.82 + Math.max(0, dy) * 0.48)
+    // Fibres don't tear in a straight line — small irregularity feels human
+    const jitter = Math.sin(dist / 6.5) * Math.min(2.8, dist / 32) + Math.cos(dist / 11) * 0.6
+    drag.set(dist + jitter)
+    setRip(Math.min(1, dist / TEAR_THRESHOLD))
     if (dist >= TEAR_THRESHOLD) {
       setDragging(false)
-      setDragX(TEAR_THRESHOLD + 40)
+      drag.set(TEAR_THRESHOLD + 28)
       finishTear()
     }
   }
@@ -48,8 +59,9 @@ export function BoardingPass() {
   const onPointerUp = () => {
     if (booking.ticketTorn) return
     setDragging(false)
-    if (dragX < TEAR_THRESHOLD) {
-      setDragX(0)
+    if (drag.get() < TEAR_THRESHOLD) {
+      drag.set(0)
+      setRip(0)
     }
   }
 
@@ -140,22 +152,30 @@ export function BoardingPass() {
       <p className="lede">
         {booking.ticketTorn
           ? 'Boleto cortado. Dirígete a la puerta.'
-          : 'Arrastra el talón para cortar tu boleto — como en el aeropuerto.'}
+          : 'Sujeta el talón y jálalo despacio — como si lo rasgara un agente.'}
       </p>
 
-      <div className={`boarding-pass ${tornAnim ? 'torn' : 'interactive'}`}>
+      <div
+        className={`boarding-pass ${tornAnim ? 'torn' : 'interactive'} ${dragging ? 'pulling' : ''}`}
+      >
         <AnimatePresence>
           {!booking.ticketTorn ? (
-            <div className="bp-full" key="full">
-              <div className="bp-main-wrap">{main}</div>
-              <div className="bp-perforation" aria-hidden>
-                <span className="bp-cut-hint">✂ corta</span>
-              </div>
-              <div
+            <div className="bp-full organic" key="full">
+              <motion.div
+                className="bp-main-wrap"
+                style={{ rotate: mainRotate, x: mainShift }}
+              >
+                {main}
+                <div className="bp-tear-edge left" style={{ opacity: rip }} />
+              </motion.div>
+
+              <motion.div className="bp-perforation" style={{ width: tearGap }} aria-hidden>
+                <span className="bp-cut-hint">rasga</span>
+              </motion.div>
+
+              <motion.div
                 className="bp-stub-wrap"
-                style={{
-                  transform: `translateX(${dragX}px) rotate(${dragX * 0.08}deg)`,
-                }}
+                style={{ x: smooth, y: stubY, rotate: stubRotate }}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
@@ -163,32 +183,35 @@ export function BoardingPass() {
                 role="slider"
                 aria-valuemin={0}
                 aria-valuemax={TEAR_THRESHOLD}
-                aria-valuenow={Math.round(dragX)}
-                aria-label="Arrastra para cortar el boleto"
+                aria-valuenow={Math.round(rip * TEAR_THRESHOLD)}
+                aria-label="Arrastra para rasgar el boleto"
                 tabIndex={0}
               >
+                <div className="bp-tear-edge right" style={{ opacity: rip }} />
                 {stub}
-                <div className="bp-drag-affordance">⟶</div>
-              </div>
+                <div className="bp-drag-affordance">⟶ jala</div>
+              </motion.div>
             </div>
           ) : (
             <>
               <motion.div
                 className="bp-piece left"
                 key="left"
-                initial={{ x: 0, rotate: 0 }}
-                animate={{ x: -28, rotate: -6, y: 4 }}
-                transition={{ type: 'spring', stiffness: 90, damping: 14 }}
+                initial={{ x: -6, rotate: -1.5, y: 0, opacity: 1 }}
+                animate={{ x: -28, rotate: -5.5, y: 10 }}
+                transition={{ type: 'spring', stiffness: 55, damping: 14, mass: 1.1 }}
               >
                 {main}
+                <div className="bp-tear-edge left on" />
               </motion.div>
               <motion.div
                 className="bp-piece right"
                 key="right"
-                initial={{ x: dragX, rotate: dragX * 0.08 }}
-                animate={{ x: 56, y: 28, rotate: 14 }}
-                transition={{ type: 'spring', stiffness: 80, damping: 12 }}
+                initial={{ x: 18, rotate: 5, y: 6, opacity: 1 }}
+                animate={{ x: 58, rotate: 18, y: 42 }}
+                transition={{ type: 'spring', stiffness: 48, damping: 12, mass: 1.15 }}
               >
+                <div className="bp-tear-edge right on" />
                 {stub}
               </motion.div>
             </>
@@ -197,7 +220,7 @@ export function BoardingPass() {
       </div>
 
       {!booking.ticketTorn && (
-        <p className="tear-hint">Mantén y desliza el talón por la línea de puntos</p>
+        <p className="tear-hint">Mantén pulsado el talón y arrastra — no hace falta un botón</p>
       )}
 
       <div className="actions">
@@ -208,18 +231,7 @@ export function BoardingPass() {
           <button type="button" className="btn primary" onClick={() => setStep('gate')}>
             Ir a la puerta
           </button>
-        ) : (
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={() => {
-              setDragX(TEAR_THRESHOLD + 20)
-              finishTear()
-            }}
-          >
-            Cortar con un toque
-          </button>
-        )}
+        ) : null}
       </div>
     </motion.section>
   )

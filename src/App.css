@@ -70,6 +70,10 @@ img {
   overflow: hidden;
 }
 
+.app-shell.cinematic {
+  overflow: visible;
+}
+
 .world-bg {
   position: fixed;
   inset: 0;
@@ -789,11 +793,17 @@ select:focus {
 }
 
 .bp-main-wrap {
+  position: relative;
   background: linear-gradient(145deg, #fbf6ec, #f0e4cf);
   border-radius: 1rem 0 0 1rem;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 22px 50px rgba(0, 0, 0, 0.38);
   color: #1b2430;
+}
+
+.bp-main-wrap .bp-main {
+  border-radius: inherit;
+  overflow: hidden;
 }
 
 .bp-stub-wrap {
@@ -806,6 +816,7 @@ select:focus {
   box-shadow: 0 22px 50px rgba(0, 0, 0, 0.38);
   z-index: 2;
   color: #1b2430;
+  overflow: visible;
 }
 
 .bp-stub-wrap:active {
@@ -975,19 +986,26 @@ select:focus {
 }
 
 .bp-piece.left {
+  position: relative;
   flex: 1;
   background: linear-gradient(145deg, #fbf6ec, #f0e4cf);
   border-radius: 1rem;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.32);
   color: #1b2430;
 }
 
+.bp-piece.left .bp-main {
+  border-radius: inherit;
+  overflow: hidden;
+}
+
 .bp-piece.right {
+  position: relative;
   width: 138px;
   background: linear-gradient(180deg, #eadfca, #e2d4b6);
   border-radius: 1rem;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.32);
   color: #1b2430;
 }
@@ -1482,63 +1500,108 @@ select:focus {
   margin: 0.6rem 0 0;
 }
 
-/* ——— Cinematic takeoff / touchdown ——— */
-.stage-cinema {
-  width: 100% !important;
-  max-width: none;
-  justify-self: stretch;
-}
-
-.app-shell.cinematic .layout-flight {
-  padding: 0;
-}
-
+/* ——— Cinematic takeoff / touchdown (fullscreen) ——— */
 .cinema {
-  position: relative;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
   width: 100%;
   min-height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  background: #05080f;
+  background: #071018;
 }
 
 .cinema-sky {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 20%, rgba(126, 180, 255, 0.25), transparent 55%),
-    linear-gradient(180deg, #1a2740 0%, #6b8cae 42%, #c4a574 58%, #2a2118 100%);
   overflow: hidden;
 }
 
-.cinema-sky.night {
+.takeoff-sky {
   background:
-    radial-gradient(ellipse 70% 40% at 70% 18%, rgba(255, 220, 160, 0.2), transparent 45%),
-    linear-gradient(180deg, #060a14 0%, #121c30 48%, #1a2433 70%, #0d1510 100%);
+    radial-gradient(ellipse 90% 55% at 50% 18%, rgba(140, 190, 255, 0.35), transparent 55%),
+    linear-gradient(180deg, #1c2d4a 0%, #6f92b8 38%, #d2b48c 56%, #3a2f22 100%);
+}
+
+.touchdown-sky {
+  background:
+    radial-gradient(ellipse 70% 40% at 72% 16%, rgba(255, 210, 140, 0.28), transparent 48%),
+    linear-gradient(180deg, #060a14 0%, #152038 46%, #1c2838 68%, #101810 100%);
+}
+
+.cinema-clouds {
+  position: absolute;
+  inset: 8% -20% auto;
+  height: 28%;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(255, 255, 255, 0.35) 0 12%, transparent 18%),
+    radial-gradient(ellipse at 55% 40%, rgba(255, 255, 255, 0.28) 0 14%, transparent 20%),
+    radial-gradient(ellipse at 80% 60%, rgba(255, 255, 255, 0.22) 0 10%, transparent 16%);
+  animation: driftClouds 18s linear infinite;
+  opacity: 0.7;
+}
+
+.cloud-b {
+  top: 22%;
+  animation-duration: 26s;
+  opacity: 0.45;
+}
+
+@keyframes driftClouds {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-12%);
+  }
 }
 
 .cinema-runway {
   position: absolute;
-  left: 10%;
-  right: 10%;
-  bottom: 18%;
-  height: 28%;
+  left: 8%;
+  right: 8%;
+  bottom: 14%;
+  height: 34%;
+  border-radius: 0.4rem;
   background:
-    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55) 48%, rgba(255, 255, 255, 0.55) 52%, transparent),
-    repeating-linear-gradient(90deg, #3a3a3a 0 40px, #2a2a2a 40px 80px);
+    linear-gradient(90deg, #2a2a2a, #3b3b3b 12%, #3b3b3b 88%, #2a2a2a),
+    repeating-linear-gradient(90deg, #333 0 36px, #2c2c2c 36px 72px);
   transform-origin: 50% 100%;
-  opacity: 0.85;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: center;
+}
+
+.runway-line {
+  display: block;
+  width: 70%;
+  height: 6px;
+  background: repeating-linear-gradient(
+    90deg,
+    #f5f5f5 0 28px,
+    transparent 28px 48px
+  );
+}
+
+.runway-line.light {
+  background: repeating-linear-gradient(
+    90deg,
+    #f5d56a 0 20px,
+    transparent 20px 36px
+  );
+  box-shadow: 0 0 12px rgba(245, 213, 106, 0.45);
 }
 
 .cinema-horizon {
   position: absolute;
   left: 0;
   right: 0;
-  top: 44%;
+  top: 46%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
 }
 
 .cinema-ground {
@@ -1546,38 +1609,83 @@ select:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 42%;
+  height: 46%;
   background:
-    linear-gradient(180deg, transparent, rgba(20, 40, 30, 0.9)),
-    repeating-linear-gradient(90deg, #1a2a22 0 18px, #15231c 18px 36px);
+    linear-gradient(180deg, transparent, rgba(12, 28, 20, 0.85)),
+    repeating-linear-gradient(90deg, #1a2a22 0 20px, #132019 20px 40px);
+  display: grid;
+  place-items: center;
+  padding-bottom: 18%;
 }
 
-.cinema-plane {
+.cinema-city-glow {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 38%;
+  height: 18%;
+  background: radial-gradient(ellipse at center, rgba(255, 200, 120, 0.25), transparent 70%);
+  filter: blur(8px);
+}
+
+.cinema-plane-wrap {
   position: absolute;
   left: 50%;
-  top: 48%;
-  color: #f4f7fb;
-  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45));
-  transform: translateX(-50%);
+  top: 46%;
+  width: min(280px, 70vw);
+  will-change: transform;
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.45));
+  z-index: 3;
 }
 
-.cinema-plane.landing {
-  top: 40%;
+.cinema-plane-wrap.landing {
+  top: 42%;
+}
+
+.cinema-plane-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  color: #eef3f8;
+}
+
+.cinema-speed-lines {
+  position: absolute;
+  inset: 20% 0 35%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 40px,
+    rgba(255, 255, 255, 0.08) 40px 42px
+  );
+  mask-image: linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent);
+  pointer-events: none;
+}
+
+.cinema-dust {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: 28%;
+  height: 40px;
+  background: radial-gradient(ellipse at center, rgba(200, 190, 160, 0.35), transparent 70%);
+  filter: blur(6px);
+  pointer-events: none;
 }
 
 .touchdown-flash {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 70%, rgba(255, 255, 255, 0.5), transparent 50%);
+  background: radial-gradient(circle at 50% 68%, rgba(255, 255, 255, 0.55), transparent 52%);
   pointer-events: none;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.12s ease;
+  z-index: 4;
 }
 
 .cinema-hud {
   position: relative;
-  z-index: 2;
+  z-index: 5;
   padding: 1.5rem 1.35rem max(2rem, env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, transparent, rgba(5, 8, 15, 0.88) 28%);
+  background: linear-gradient(180deg, transparent, rgba(5, 8, 15, 0.92) 30%);
   text-align: center;
 }
 
@@ -1619,7 +1727,6 @@ select:focus {
 .cinema-bar div {
   height: 100%;
   background: linear-gradient(90deg, var(--mint), var(--gold));
-  transition: width 0.05s linear;
 }
 
 .cinema-meta {
@@ -1640,6 +1747,226 @@ select:focus {
   letter-spacing: 0.16em;
   transform: rotate(-6deg);
   margin-bottom: 0.65rem;
+}
+
+/* ——— Airplane-shaped seat map ——— */
+.plane-map {
+  position: relative;
+  margin: 0.4rem 0 0.2rem;
+  padding: 0.5rem 0.35rem 0.85rem;
+}
+
+.plane-nose {
+  width: min(58%, 220px);
+  margin: 0 auto;
+  height: 52px;
+  border-radius: 50% 50% 8px 8px / 90% 90% 8px 8px;
+  background: linear-gradient(180deg, #243044, #151d2b);
+  border: 1px solid var(--line);
+  border-bottom: none;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  position: relative;
+  z-index: 2;
+}
+
+.plane-nose::before,
+.plane-nose::after {
+  content: '';
+  position: absolute;
+  top: 40%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(125, 211, 252, 0.35);
+  border: 1px solid rgba(125, 211, 252, 0.45);
+}
+
+.plane-nose::before {
+  left: 18%;
+}
+
+.plane-nose::after {
+  right: 18%;
+}
+
+.plane-body {
+  position: relative;
+  width: min(100%, 340px);
+  margin: -6px auto 0;
+  padding: 0.65rem 0.55rem 0.75rem;
+  background: linear-gradient(90deg, #0d1420 0%, #172233 8%, #172233 92%, #0d1420 100%);
+  border: 1px solid var(--line);
+  border-radius: 1.4rem;
+  z-index: 1;
+}
+
+.plane-wing {
+  position: absolute;
+  top: 28%;
+  width: 42%;
+  height: 34%;
+  background: linear-gradient(180deg, #1c2738, #121925);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.plane-wing.left {
+  left: -34%;
+  border-radius: 8% 40% 12% 70%;
+  transform: skewY(-4deg);
+}
+
+.plane-wing.right {
+  right: -34%;
+  border-radius: 40% 8% 70% 12%;
+  transform: skewY(4deg);
+}
+
+.plane-cabin {
+  position: relative;
+  z-index: 2;
+}
+
+.plane-cabin .cabin-cols-label {
+  grid-template-columns: 1.35rem repeat(3, 1fr) 1.6rem repeat(3, 1fr);
+}
+
+.plane-cabin .cabin-row {
+  grid-template-columns: 1.35rem 1fr 1.6rem 1fr;
+}
+
+.plane-tail {
+  width: min(46%, 170px);
+  margin: -4px auto 0;
+  height: 58px;
+  border-radius: 10px 10px 42% 42%;
+  background: linear-gradient(180deg, #151d2b, #0e141f);
+  border: 1px solid var(--line);
+  border-top: none;
+  display: grid;
+  place-items: end center;
+  padding-bottom: 0.45rem;
+  color: var(--muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  position: relative;
+}
+
+.plane-tail .fin {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 34px;
+  background: linear-gradient(180deg, #2a3648, #151d2b);
+  border-radius: 4px 4px 2px 2px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Organic ticket tear */
+.bp-full.organic {
+  display: grid;
+  grid-template-columns: 1fr auto minmax(118px, 138px);
+  align-items: stretch;
+  gap: 0;
+}
+
+.boarding-pass.pulling .bp-stub-wrap {
+  box-shadow: 0 26px 55px rgba(0, 0, 0, 0.45);
+}
+
+.bp-tear-edge {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 16px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 4;
+}
+
+.bp-tear-edge.on {
+  opacity: 1;
+}
+
+.bp-tear-edge.left {
+  right: -8px;
+  background: #f0e4cf;
+  clip-path: polygon(
+    0 0,
+    70% 3%,
+    100% 7%,
+    55% 12%,
+    95% 18%,
+    40% 24%,
+    100% 31%,
+    50% 38%,
+    90% 45%,
+    35% 52%,
+    100% 59%,
+    45% 66%,
+    85% 73%,
+    30% 80%,
+    100% 87%,
+    55% 93%,
+    80% 100%,
+    0 100%
+  );
+  box-shadow: 2px 0 0 rgba(0, 0, 0, 0.06);
+}
+
+.bp-tear-edge.right {
+  left: -8px;
+  background: #e2d4b6;
+  clip-path: polygon(
+    30% 0,
+    100% 0,
+    100% 100%,
+    20% 100%,
+    45% 93%,
+    0 87%,
+    55% 80%,
+    10% 73%,
+    60% 66%,
+    0 59%,
+    65% 52%,
+    5% 45%,
+    50% 38%,
+    0 31%,
+    60% 24%,
+    5% 18%,
+    45% 12%,
+    0 7%,
+    30% 3%
+  );
+  box-shadow: -2px 0 0 rgba(0, 0, 0, 0.06);
+}
+
+.bp-main-wrap,
+.bp-stub-wrap,
+.bp-piece {
+  position: relative;
+}
+
+@media (max-width: 900px) {
+  .plane-wing {
+    width: 28%;
+    opacity: 0.55;
+  }
+
+  .plane-wing.left {
+    left: -22%;
+  }
+
+  .plane-wing.right {
+    right: -22%;
+  }
 }
 
 .landing-burst {
