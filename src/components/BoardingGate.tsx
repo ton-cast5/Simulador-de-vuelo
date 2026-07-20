@@ -55,7 +55,7 @@ export function BoardingGate() {
           Atrás
         </button>
         <button type="button" className="btn primary" onClick={onBoard}>
-          Despegar y entrar en foco
+          Abordar · despegar
         </button>
       </div>
     </motion.section>

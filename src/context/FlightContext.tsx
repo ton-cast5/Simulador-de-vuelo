@@ -39,6 +39,7 @@ interface FlightContextValue {
   tearTicket: () => void
   confirmRoute: () => void
   startFlight: () => void
+  beginCruise: () => void
   togglePause: () => void
   setCabinView: (v: CabinView) => void
   togglePureMode: () => void
@@ -46,6 +47,7 @@ interface FlightContextValue {
   toggleMapStyle: () => void
   setAnnouncement: (text: string | null) => void
   completeLanding: () => void
+  finishLanding: () => void
   reset: () => void
   softResetToRoute: () => void
 }
@@ -160,10 +162,23 @@ export function FlightProvider({ children }: { children: ReactNode }) {
     landedLock.current = false
     setSession((s) => ({
       ...s,
-      startedAt: Date.now(),
+      startedAt: null,
       progress: 0,
       paused: false,
       cabinView: 'globe',
+      announcement: null,
+    }))
+    setStep('takeoff')
+  }, [])
+
+  const beginCruise = useCallback(() => {
+    pausedAccum.current = 0
+    pauseStarted.current = null
+    setSession((s) => ({
+      ...s,
+      startedAt: Date.now(),
+      progress: 0,
+      paused: false,
     }))
     setStep('flight')
   }, [])
@@ -234,6 +249,10 @@ export function FlightProvider({ children }: { children: ReactNode }) {
       return b
     })
     setSession((s) => ({ ...s, progress: 1, paused: true }))
+    setStep('touchdown')
+  }, [])
+
+  const finishLanding = useCallback(() => {
     setStep('landed')
   }, [])
 
@@ -301,6 +320,7 @@ export function FlightProvider({ children }: { children: ReactNode }) {
       tearTicket,
       confirmRoute,
       startFlight,
+      beginCruise,
       togglePause,
       setCabinView,
       togglePureMode,
@@ -308,6 +328,7 @@ export function FlightProvider({ children }: { children: ReactNode }) {
       toggleMapStyle,
       setAnnouncement,
       completeLanding,
+      finishLanding,
       reset,
       softResetToRoute,
     }),
@@ -326,6 +347,7 @@ export function FlightProvider({ children }: { children: ReactNode }) {
       tearTicket,
       confirmRoute,
       startFlight,
+      beginCruise,
       togglePause,
       setCabinView,
       togglePureMode,
@@ -333,6 +355,7 @@ export function FlightProvider({ children }: { children: ReactNode }) {
       toggleMapStyle,
       setAnnouncement,
       completeLanding,
+      finishLanding,
       reset,
       softResetToRoute,
     ],

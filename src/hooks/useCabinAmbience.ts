@@ -1,35 +1,22 @@
 import { useEffect, useRef } from 'react'
 
-/** Soft cabin engine hum via Web Audio (no external assets). */
+/** Layered cabin ambience: engine + air hiss (Web Audio only). */
 export function useCabinAmbience(enabled: boolean) {
   const ctxRef = useRef<AudioContext | null>(null)
   const nodesRef = useRef<{
-    osc: OscillatorNode
-    gain: GainNode
-    filter: BiquadFilterNode
-    lfo: OscillatorNode
-    lfoGain: GainNode
+    stop: () => void
   } | null>(null)
 
   useEffect(() => {
     if (!enabled) {
-      const nodes = nodesRef.current
-      if (nodes) {
-        nodes.gain.gain.linearRampToValueAtTime(0, nodes.gain.context.currentTime + 0.4)
-        window.setTimeout(() => {
-          try {
-            nodes.osc.stop()
-            nodes.lfo.stop()
-          } catch {
-            /* already stopped */
-          }
-          nodesRef.current = null
-        }, 450)
-      }
+      nodesRef.current?.stop()
+      nodesRef.current = null
       return
     }
 
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
     const ctx = ctxRef.current ?? new AudioCtx()
     ctxRef.current = ctx
 
@@ -39,41 +26,71 @@ export function useCabinAmbience(enabled: boolean) {
     resume()
     window.addEventListener('pointerdown', resume, { once: true })
 
-    const osc = ctx.createOscillator()
-    osc.type = 'sawtooth'
-    osc.frequency.value = 68
+    const master = ctx.createGain()
+    master.gain.value = 0
+    master.gain.linearRampToValueAtTime(0.034, ctx.currentTime + 1.4)
+    master.connect(ctx.destination)
 
-    const filter = ctx.createBiquadFilter()
-    filter.type = 'lowpass'
-    filter.frequency.value = 220
-    filter.Q.value = 0.7
-
-    const gain = ctx.createGain()
-    gain.gain.value = 0
-    gain.gain.linearRampToValueAtTime(0.028, ctx.currentTime + 1.2)
+    // Engine rumble
+    const eng = ctx.createOscillator()
+    eng.type = 'sawtooth'
+    eng.frequency.value = 62
+    const engFilter = ctx.createBiquadFilter()
+    engFilter.type = 'lowpass'
+    engFilter.frequency.value = 200
+    const engGain = ctx.createGain()
+    engGain.gain.value = 0.55
+    eng.connect(engFilter)
+    engFilter.connect(engGain)
+    engGain.connect(master)
 
     const lfo = ctx.createOscillator()
-    lfo.frequency.value = 0.08
+    lfo.frequency.value = 0.07
     const lfoGain = ctx.createGain()
-    lfoGain.gain.value = 18
+    lfoGain.gain.value = 14
     lfo.connect(lfoGain)
-    lfoGain.connect(filter.frequency)
+    lfoGain.connect(engFilter.frequency)
 
-    osc.connect(filter)
-    filter.connect(gain)
-    gain.connect(ctx.destination)
-    osc.start()
+    // Air hiss (filtered noise)
+    const noiseLen = ctx.sampleRate * 2
+    const noiseBuf = ctx.createBuffer(1, noiseLen, ctx.sampleRate)
+    const data = noiseBuf.getChannelData(0)
+    for (let i = 0; i < noiseLen; i++) data[i] = Math.random() * 2 - 1
+    const noise = ctx.createBufferSource()
+    noise.buffer = noiseBuf
+    noise.loop = true
+    const noiseFilter = ctx.createBiquadFilter()
+    noiseFilter.type = 'bandpass'
+    noiseFilter.frequency.value = 900
+    noiseFilter.Q.value = 0.5
+    const noiseGain = ctx.createGain()
+    noiseGain.gain.value = 0.22
+    noise.connect(noiseFilter)
+    noiseFilter.connect(noiseGain)
+    noiseGain.connect(master)
+
+    eng.start()
     lfo.start()
-    nodesRef.current = { osc, gain, filter, lfo, lfoGain }
+    noise.start()
+
+    nodesRef.current = {
+      stop: () => {
+        master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.45)
+        window.setTimeout(() => {
+          try {
+            eng.stop()
+            lfo.stop()
+            noise.stop()
+          } catch {
+            /* noop */
+          }
+        }, 500)
+      },
+    }
 
     return () => {
       window.removeEventListener('pointerdown', resume)
-      try {
-        osc.stop()
-        lfo.stop()
-      } catch {
-        /* noop */
-      }
+      nodesRef.current?.stop()
       nodesRef.current = null
     }
   }, [enabled])

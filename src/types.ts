@@ -5,7 +5,9 @@ export type Step =
   | 'seat'
   | 'ticket'
   | 'gate'
+  | 'takeoff'
   | 'flight'
+  | 'touchdown'
   | 'landed'
 
 export type CabinView = 'globe' | 'window'

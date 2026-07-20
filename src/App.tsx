@@ -6,7 +6,9 @@ import { DocumentsCheck } from './components/DocumentsCheck'
 import { SeatSelection } from './components/SeatSelection'
 import { BoardingPass } from './components/BoardingPass'
 import { BoardingGate } from './components/BoardingGate'
+import { TakeoffSequence } from './components/TakeoffSequence'
 import { FlightView } from './components/FlightView'
+import { TouchdownSequence } from './components/TouchdownSequence'
 import { Landing } from './components/Landing'
 import { GlobeScene } from './components/GlobeScene'
 import './App.css'
@@ -23,12 +25,17 @@ const STEPS = [
 
 function Shell() {
   const { step, booking, session } = useFlight()
-  const immersive = step === 'flight'
-  const activeIdx = STEPS.findIndex((s) => s.id === step)
+  const cinematic = step === 'takeoff' || step === 'touchdown'
+  const immersive = step === 'flight' || cinematic
   const showBgGlobe = !immersive
+  const highlightId =
+    step === 'takeoff' ? 'flight' : step === 'touchdown' ? 'landed' : step
+  const highlightIdx = STEPS.findIndex((x) => x.id === highlightId)
 
   return (
-    <div className={`app-shell step-${step} ${immersive ? 'immersive' : ''}`}>
+    <div
+      className={`app-shell step-${step} ${immersive ? 'immersive' : ''} ${cinematic ? 'cinematic' : ''}`}
+    >
       {showBgGlobe && (
         <div className="world-bg" aria-hidden>
           <GlobeScene
@@ -53,7 +60,7 @@ function Shell() {
               {STEPS.map((s, i) => (
                 <span
                   key={s.id}
-                  className={`step-pill ${i <= activeIdx ? 'on' : ''} ${s.id === step ? 'current' : ''}`}
+                  className={`step-pill ${i <= highlightIdx ? 'on' : ''} ${s.id === highlightId ? 'current' : ''}`}
                 >
                   <span className="step-full">{s.label}</span>
                   <span className="step-short">{s.short}</span>
@@ -65,7 +72,7 @@ function Shell() {
       )}
 
       <main className={`layout ${immersive ? 'layout-flight' : ''} step-${step}`}>
-        <div className="stage">
+        <div className={`stage ${cinematic ? 'stage-cinema' : ''}`}>
           <AnimatePresence mode="wait">
             {step === 'welcome' && <Welcome key="welcome" />}
             {step === 'route' && <RouteSelect key="route" />}
@@ -73,7 +80,9 @@ function Shell() {
             {step === 'seat' && <SeatSelection key="seat" />}
             {step === 'ticket' && <BoardingPass key="ticket" />}
             {step === 'gate' && <BoardingGate key="gate" />}
+            {step === 'takeoff' && <TakeoffSequence key="takeoff" />}
             {step === 'flight' && <FlightView key="flight" />}
+            {step === 'touchdown' && <TouchdownSequence key="touchdown" />}
             {step === 'landed' && <Landing key="landed" />}
           </AnimatePresence>
         </div>

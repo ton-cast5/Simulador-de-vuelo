@@ -13,7 +13,7 @@ export function Landing() {
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
     >
       <div className="landing-burst">
-        <div className="stamp">LANDED</div>
+        <div className="stamp soft">LANDED</div>
         <p className="eyebrow">Aterrizaje seguro</p>
         <h2>Bienvenido a {booking.destination?.city}</h2>
         <p className="lede" style={{ marginInline: 'auto' }}>

@@ -1482,6 +1482,166 @@ select:focus {
   margin: 0.6rem 0 0;
 }
 
+/* ——— Cinematic takeoff / touchdown ——— */
+.stage-cinema {
+  width: 100% !important;
+  max-width: none;
+  justify-self: stretch;
+}
+
+.app-shell.cinematic .layout-flight {
+  padding: 0;
+}
+
+.cinema {
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: #05080f;
+}
+
+.cinema-sky {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 20%, rgba(126, 180, 255, 0.25), transparent 55%),
+    linear-gradient(180deg, #1a2740 0%, #6b8cae 42%, #c4a574 58%, #2a2118 100%);
+  overflow: hidden;
+}
+
+.cinema-sky.night {
+  background:
+    radial-gradient(ellipse 70% 40% at 70% 18%, rgba(255, 220, 160, 0.2), transparent 45%),
+    linear-gradient(180deg, #060a14 0%, #121c30 48%, #1a2433 70%, #0d1510 100%);
+}
+
+.cinema-runway {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: 18%;
+  height: 28%;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55) 48%, rgba(255, 255, 255, 0.55) 52%, transparent),
+    repeating-linear-gradient(90deg, #3a3a3a 0 40px, #2a2a2a 40px 80px);
+  transform-origin: 50% 100%;
+  opacity: 0.85;
+}
+
+.cinema-horizon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 44%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+}
+
+.cinema-ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 42%;
+  background:
+    linear-gradient(180deg, transparent, rgba(20, 40, 30, 0.9)),
+    repeating-linear-gradient(90deg, #1a2a22 0 18px, #15231c 18px 36px);
+}
+
+.cinema-plane {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  color: #f4f7fb;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45));
+  transform: translateX(-50%);
+}
+
+.cinema-plane.landing {
+  top: 40%;
+}
+
+.touchdown-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 70%, rgba(255, 255, 255, 0.5), transparent 50%);
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.cinema-hud {
+  position: relative;
+  z-index: 2;
+  padding: 1.5rem 1.35rem max(2rem, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent, rgba(5, 8, 15, 0.88) 28%);
+  text-align: center;
+}
+
+.cinema-hud h2 {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  margin-bottom: 0.5rem;
+}
+
+.cinema-phase {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.cinema-phase strong {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+}
+
+.cinema-phase span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cinema-bar {
+  width: min(360px, 80%);
+  height: 3px;
+  margin: 0 auto 0.9rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.cinema-bar div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--mint), var(--gold));
+  transition: width 0.05s linear;
+}
+
+.cinema-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.stamp.soft {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border: 2px solid var(--mint);
+  color: var(--mint);
+  border-radius: 0.35rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  transform: rotate(-6deg);
+  margin-bottom: 0.65rem;
+}
+
 .landing-burst {
   text-align: center;
   margin-bottom: 1rem;
