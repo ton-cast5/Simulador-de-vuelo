@@ -59,18 +59,18 @@ export function GlobeScene({
       list.push({
         lat: origin.lat,
         lng: origin.lon,
-        color: '#5eead4',
+        color: '#7ee0c8',
         label: `${origin.code} · ${origin.city}`,
-        size: 0.55,
+        size: 0.7,
       })
     }
     if (destination) {
       list.push({
         lat: destination.lat,
         lng: destination.lon,
-        color: '#fb7185',
+        color: '#e6c36a',
         label: `${destination.code} · ${destination.city}`,
-        size: 0.55,
+        size: 0.7,
       })
     }
     return list
@@ -84,8 +84,16 @@ export function GlobeScene({
         startLng: origin.lon,
         endLat: destination.lat,
         endLng: destination.lon,
-        color: ['#f5d56a', '#fbbf24'],
+        color: ['#e6c36a', '#f0d48a'],
       },
+    ]
+  }, [origin, destination])
+
+  const rings = useMemo(() => {
+    if (!origin || !destination) return []
+    return [
+      { lat: origin.lat, lng: origin.lon, color: '#7ee0c8', maxR: 3.2, prop: 0 },
+      { lat: destination.lat, lng: destination.lon, color: '#e6c36a', maxR: 3.2, prop: 0 },
     ]
   }, [origin, destination])
 
@@ -122,15 +130,14 @@ export function GlobeScene({
   const labels = useMemo(() => {
     if (!origin || !destination) return []
     return [
-      { lat: origin.lat, lng: origin.lon, text: origin.code, color: '#5eead4' },
-      { lat: destination.lat, lng: destination.lon, text: destination.code, color: '#fb7185' },
+      { lat: origin.lat, lng: origin.lon, text: origin.code, color: '#7ee0c8' },
+      { lat: destination.lat, lng: destination.lon, text: destination.code, color: '#e6c36a' },
     ]
   }, [origin, destination])
 
-  // Keep path visible as thin ring of points for accuracy
   const pathDots = useMemo(() => {
     if (!origin || !destination || mode === 'idle') return []
-    return greatCircleArc(origin.lat, origin.lon, destination.lat, destination.lon, 48).map(
+    return greatCircleArc(origin.lat, origin.lon, destination.lat, destination.lon, 64).map(
       (p) => ({ lat: p.lat, lng: p.lon }),
     )
   }, [origin, destination, mode])
@@ -139,16 +146,18 @@ export function GlobeScene({
     const g = globeRef.current
     if (!g) return
     g.controls().autoRotate = mode === 'idle'
-    g.controls().autoRotateSpeed = 0.45
+    g.controls().autoRotateSpeed = 0.35
     g.controls().enableZoom = true
-    g.controls().minDistance = 160
-    g.controls().maxDistance = 450
+    g.controls().minDistance = 150
+    g.controls().maxDistance = 480
+    g.controls().enableDamping = true
+    g.controls().dampingFactor = 0.08
   }, [mode, size.w])
 
   useEffect(() => {
     const g = globeRef.current
-    if (!g || !origin) return
-    if (mode === 'preview' && destination) {
+    if (!g) return
+    if (mode === 'preview' && origin && destination) {
       const mid = interpolateGreatCircle(
         origin.lat,
         origin.lon,
@@ -156,9 +165,9 @@ export function GlobeScene({
         destination.lon,
         0.5,
       )
-      g.pointOfView({ lat: mid.lat, lng: mid.lon, altitude: size.w < 768 ? 2.4 : 1.9 }, 1200)
+      g.pointOfView({ lat: mid.lat, lng: mid.lon, altitude: size.w < 768 ? 2.35 : 1.85 }, 1400)
     } else if (mode === 'idle') {
-      g.pointOfView({ lat: 18, lng: -40, altitude: size.w < 768 ? 2.6 : 2.1 }, 1000)
+      g.pointOfView({ lat: 16, lng: -30, altitude: size.w < 768 ? 2.55 : 2.05 }, 1200)
     }
   }, [mode, origin, destination, size.w])
 
@@ -170,16 +179,16 @@ export function GlobeScene({
       {
         lat: p.lat,
         lng: p.lng,
-        altitude: size.w < 768 ? 1.7 : 1.35,
+        altitude: size.w < 768 ? 1.65 : 1.28,
       },
-      350,
+      400,
     )
   }, [mode, planeEls, size.w])
 
   const htmlElement = useCallback((d: object) => {
     const el = document.createElement('div')
     const data = d as { bearing: number }
-    el.innerHTML = `<div class="globe-plane-marker" style="transform:rotate(${data.bearing}deg)"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>`
+    el.innerHTML = `<div class="globe-plane-marker" style="transform:rotate(${data.bearing}deg)"><svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>`
     return el
   }, [])
 
@@ -193,13 +202,13 @@ export function GlobeScene({
         globeImageUrl={mapStyle === 'night' ? NIGHT_TEX : DAY_TEX}
         bumpImageUrl={BUMP_TEX}
         showAtmosphere
-        atmosphereColor={mapStyle === 'night' ? '#4c7fd4' : '#6eb6ff'}
-        atmosphereAltitude={0.18}
+        atmosphereColor={mapStyle === 'night' ? '#5b7fd4' : '#8ec5ff'}
+        atmosphereAltitude={0.22}
         pointsData={points}
         pointLat="lat"
         pointLng="lng"
         pointColor="color"
-        pointAltitude={0.012}
+        pointAltitude={0.014}
         pointRadius="size"
         pointLabel="label"
         labelsData={labels}
@@ -207,35 +216,41 @@ export function GlobeScene({
         labelLng="lng"
         labelText="text"
         labelColor="color"
-        labelSize={1.4}
-        labelDotRadius={0.35}
-        labelAltitude={0.02}
+        labelSize={1.55}
+        labelDotRadius={0.4}
+        labelAltitude={0.022}
         labelResolution={2}
+        ringsData={mode === 'idle' ? [] : rings}
+        ringLat="lat"
+        ringLng="lng"
+        ringColor={(d: object) => (d as { color: string }).color}
+        ringMaxRadius="maxR"
+        ringPropagationSpeed={2.2}
+        ringRepeatPeriod={1400}
         arcsData={mode === 'idle' ? [] : arcs}
         arcStartLat="startLat"
         arcStartLng="startLng"
         arcEndLat="endLat"
         arcEndLng="endLng"
         arcColor="color"
-        arcAltitude={0.22}
-        arcStroke={1.1}
-        arcDashLength={0.5}
-        arcDashGap={0.2}
-        arcDashAnimateTime={mode === 'flight' ? 0 : 2500}
+        arcAltitude={0.28}
+        arcStroke={1.35}
+        arcDashLength={0.4}
+        arcDashGap={0.15}
+        arcDashAnimateTime={mode === 'flight' ? 0 : 2200}
         pathsData={mode === 'idle' ? [] : [pathDots]}
         pathPointLat="lat"
         pathPointLng="lng"
-        pathColor={() => 'rgba(245,213,106,0.45)'}
-        pathStroke={0.55}
+        pathColor={() => 'rgba(230,195,106,0.5)'}
+        pathStroke={0.65}
         htmlElementsData={planeEls}
         htmlLat="lat"
         htmlLng="lng"
-        htmlAltitude={0.04}
+        htmlAltitude={0.05}
         htmlElement={htmlElement}
         waitForGlobeReady
         animateIn={false}
       />
-      {/* Keep React tree aware of marker for CSS */}
       <span className="sr-only">
         <PlaneMarker />
       </span>

@@ -4,20 +4,23 @@ import { formatDistance } from '../utils/geo'
 
 export function Landing() {
   const { booking, reset, softResetToRoute, log } = useFlight()
-  const recent = log[0]
 
   return (
     <motion.section
-      className="panel landing glass"
+      className="panel glass"
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
     >
-      <p className="eyebrow">Aterrizaje seguro</p>
-      <h2>Bienvenido a {booking.destination?.city}</h2>
-      <p className="lede">
-        Vuelo {booking.flightNumber} completado · {formatDistance(booking.distanceKm)} ·{' '}
-        {booking.sessionMinutes} min de sesión.
-      </p>
+      <div className="landing-burst">
+        <div className="stamp">LANDED</div>
+        <p className="eyebrow">Aterrizaje seguro</p>
+        <h2>Bienvenido a {booking.destination?.city}</h2>
+        <p className="lede" style={{ marginInline: 'auto' }}>
+          {booking.flightNumber} · {formatDistance(booking.distanceKm)} ·{' '}
+          {booking.sessionMinutes} min de foco.
+        </p>
+      </div>
 
       <div className="landing-card">
         <div>
@@ -54,9 +57,6 @@ export function Landing() {
               </li>
             ))}
           </ul>
-          {recent && (
-            <p className="log-note">Último vuelo guardado en tu bitácora local.</p>
-          )}
         </div>
       )}
 
@@ -65,7 +65,7 @@ export function Landing() {
           Nueva ruta
         </button>
         <button type="button" className="btn primary" onClick={reset}>
-          Volver al inicio
+          Inicio
         </button>
       </div>
     </motion.section>

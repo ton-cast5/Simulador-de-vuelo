@@ -17,10 +17,10 @@ export function BoardingGate() {
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
     >
-      <p className="eyebrow">Paso 5 · Embarque</p>
+      <p className="eyebrow">05 · Embarque</p>
       <h2>Puerta {booking.gate}</h2>
       <p className="lede">
-        Documentos y boleto verificados. Sesión a bordo: {booking.sessionMinutes} min rumbo a{' '}
+        Todo verificado. {booking.sessionMinutes} min a bordo rumbo a{' '}
         {booking.destination?.city}.
       </p>
 

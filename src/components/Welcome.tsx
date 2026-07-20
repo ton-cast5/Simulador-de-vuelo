@@ -13,16 +13,16 @@ export function Welcome() {
 
   return (
     <motion.section
-      className="panel welcome glass"
-      initial={{ opacity: 0, y: 24 }}
+      className="panel glass welcome-hero"
+      initial={{ opacity: 0, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7 }}
+      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
     >
       <p className="eyebrow">SkyVoyage</p>
-      <h1>Tu sesión de foco es un vuelo real</h1>
+      <h1>Despega. Enfócate. Aterriza.</h1>
       <p className="lede">
-        Reserva la ruta, pasa el control documental, elige asiento, corta tu boleto y
-        cruza el planeta en un globo 3D — inspirado en Focus Flight, llevado más lejos.
+        Cada sesión es un vuelo real: ruta, documentos, asiento, boleto y el planeta
+        girando bajo tus alas.
       </p>
 
       <div className="welcome-stats">
@@ -32,13 +32,16 @@ export function Welcome() {
         </div>
         <div>
           <strong>{Math.round(miles).toLocaleString('es-MX')}</strong>
-          <span>km volados</span>
+          <span>km</span>
         </div>
       </div>
 
-      <button type="button" className="btn primary" onClick={start}>
-        Reservar vuelo
-      </button>
+      <div className="welcome-cta">
+        <button type="button" className="btn primary" onClick={start}>
+          Empezar viaje
+        </button>
+        <p className="welcome-note">Tu mundo está detrás · gira el globo</p>
+      </div>
     </motion.section>
   )
 }

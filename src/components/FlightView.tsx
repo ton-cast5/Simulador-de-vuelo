@@ -10,7 +10,7 @@ function phaseLabel(progress: number) {
   if (progress < 0.12) return 'Despegue'
   if (progress < 0.7) return 'Crucero'
   if (progress < 0.92) return 'Descenso'
-  return 'Aproximación final'
+  return 'Final'
 }
 
 export function FlightView() {
@@ -38,7 +38,6 @@ export function FlightView() {
   const remainingMs =
     booking.sessionMinutes * 60 * 1000 * (1 - session.progress)
   const remainingKm = booking.distanceKm * (1 - session.progress)
-  const flownKm = booking.distanceKm * session.progress
   const phase = phaseLabel(session.progress)
 
   return (
@@ -66,18 +65,12 @@ export function FlightView() {
 
       <div className="flight-overlay">
         {!session.pureMode && (
-          <header className="flight-top">
-            <div>
-              <p className="eyebrow">
-                {phase} · {booking.flightNumber}
-              </p>
-              <h2>
-                {booking.origin?.code} → {booking.destination?.code}
-              </h2>
-              <p className="lede tight">
-                {booking.origin?.city} · Asiento {booking.seat} ·{' '}
-                {booking.documents.fullName}
-              </p>
+          <div className="flight-chrome">
+            <div className="flight-route-pill">
+              {booking.origin?.code}
+              <em>→</em>
+              {booking.destination?.code}
+              <em>· {booking.flightNumber}</em>
             </div>
             <div className="flight-tools">
               <button
@@ -85,94 +78,92 @@ export function FlightView() {
                 className={`chip ${session.cabinView === 'globe' ? 'on' : ''}`}
                 onClick={() => setCabinView('globe')}
               >
-                Globo 3D
+                Mapa
               </button>
               <button
                 type="button"
                 className={`chip ${session.cabinView === 'window' ? 'on' : ''}`}
                 onClick={() => setCabinView('window')}
               >
-                Ventanilla
+                Ventana
               </button>
               <button type="button" className="chip" onClick={toggleMapStyle}>
                 {session.mapStyle === 'day' ? 'Día' : 'Noche'}
               </button>
               <button type="button" className="chip" onClick={toggleAmbience}>
-                {session.ambienceOn ? 'Cabina ON' : 'Cabina OFF'}
+                {session.ambienceOn ? 'Audio' : 'Mute'}
               </button>
               <button type="button" className="chip" onClick={togglePureMode}>
                 Pure
               </button>
             </div>
-          </header>
+          </div>
         )}
 
         <AnimatePresence>
           {session.announcement && !session.pureMode && (
             <motion.div
               className="cabin-announce"
-              initial={{ opacity: 0, y: -12 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
+              exit={{ opacity: 0 }}
               key={session.announcement}
             >
-              <span className="cabin-announce-tag">Anuncio de cabina</span>
+              <span className="cabin-announce-tag">Cabina</span>
               <p>{session.announcement}</p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="progress-rail">
-          <div className="progress-fill" style={{ width: `${session.progress * 100}%` }} />
-          <div className="phase-marks" aria-hidden>
-            <i style={{ left: '12%' }} />
-            <i style={{ left: '70%' }} />
-            <i style={{ left: '92%' }} />
+        <div className="flight-bottom">
+          <div className="progress-rail">
+            <div className="progress-fill" style={{ width: `${session.progress * 100}%` }} />
+            <div className="phase-marks" aria-hidden>
+              <i style={{ left: '12%' }} />
+              <i style={{ left: '70%' }} />
+              <i style={{ left: '92%' }} />
+            </div>
           </div>
+
+          <div className="flight-hud">
+            <div className="hud-card">
+              <span>Tiempo restante</span>
+              <strong>{formatDuration(remainingMs)}</strong>
+            </div>
+            <div className="hud-card">
+              <span>Distancia restante</span>
+              <strong>{formatDistance(remainingKm)}</strong>
+            </div>
+            <div className="hud-card phase">
+              <strong>
+                {phase} · {Math.round(session.progress * 100)}% · asiento {booking.seat}
+              </strong>
+            </div>
+          </div>
+
+          {!session.pureMode && (
+            <div className="flight-actions">
+              <button type="button" className="btn ghost" onClick={togglePause}>
+                {session.paused ? 'Reanudar' : 'Pausar'}
+              </button>
+              <button type="button" className="btn ghost" onClick={togglePureMode}>
+                Modo puro
+              </button>
+              <button type="button" className="btn primary" onClick={completeLanding}>
+                Aterrizar
+              </button>
+            </div>
+          )}
         </div>
-
-        <footer className="flight-hud">
-          <div className="hud-card">
-            <span>Tiempo restante</span>
-            <strong>{formatDuration(remainingMs)}</strong>
-          </div>
-          <div className="hud-card center">
-            <span>
-              {booking.origin?.code} · {phase} · {Math.round(session.progress * 100)}% ·{' '}
-              {booking.destination?.code}
-            </span>
-            <strong>
-              {formatDistance(flownKm)} · queda {formatDistance(remainingKm)}
-            </strong>
-          </div>
-          <div className="hud-card">
-            <span>Distancia total</span>
-            <strong>{formatDistance(booking.distanceKm)}</strong>
-          </div>
-        </footer>
-
-        {!session.pureMode && (
-          <div className="flight-actions">
-            <button type="button" className="btn ghost" onClick={togglePause}>
-              {session.paused ? 'Reanudar' : 'Pausar'}
-            </button>
-            <button type="button" className="btn ghost" onClick={togglePureMode}>
-              Modo puro
-            </button>
-            <button type="button" className="btn primary" onClick={completeLanding}>
-              Aterrizar ahora
-            </button>
-          </div>
-        )}
 
         {session.pureMode && (
           <button type="button" className="pure-exit" onClick={togglePureMode}>
-            Salir de Pure · {formatDuration(remainingMs)}
+            Salir · {formatDuration(remainingMs)}
           </button>
         )}
 
         {session.paused && !session.pureMode && (
-          <div className="paused-badge">En espera · turbulencia de foco</div>
+          <div className="paused-badge">En espera</div>
         )}
       </div>
     </motion.section>

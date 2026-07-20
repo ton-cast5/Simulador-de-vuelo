@@ -50,9 +50,9 @@ export function SeatSelection() {
       initial={{ opacity: 0, x: 30 }}
       animate={{ opacity: 1, x: 0 }}
     >
-      <p className="eyebrow">Paso 3 · Asiento</p>
-      <h2>Elige tu asiento</h2>
-      <p className="lede">Cabina Economy · ventanilla, pasillo y salida de emergencia.</p>
+      <p className="eyebrow">03 · Asiento</p>
+      <h2>Elige tu lugar</h2>
+      <p className="lede">Cabina Economy · ventanilla, pasillo y filas de emergencia.</p>
 
       <div className="seat-legend">
         <span>

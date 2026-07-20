@@ -16,11 +16,11 @@ export function DocumentsCheck() {
     e.preventDefault()
     const d = booking.documents
     if (!d.fullName.trim() || !d.passportNumber.trim() || !d.nationality.trim() || !d.birthDate) {
-      setError('Completa todos los campos obligatorios del pasaporte.')
+      setError('Completa todos los campos del pasaporte.')
       return
     }
     if (visaRequired && !d.visaNumber.trim()) {
-      setError(`Se requiere visa para viajar de ${booking.origin!.country} a ${booking.destination!.country}.`)
+      setError(`Visa requerida: ${booking.origin!.country} → ${booking.destination!.country}.`)
       return
     }
     setError('')
@@ -29,90 +29,96 @@ export function DocumentsCheck() {
 
   return (
     <motion.section
-      className="panel docs glass"
-      initial={{ opacity: 0, x: 30 }}
-      animate={{ opacity: 1, x: 0 }}
+      className="panel glass"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
     >
-      <p className="eyebrow">Paso 2 · Control documental</p>
-      <h2>Entrega tus papeles</h2>
+      <p className="eyebrow">02 · Documentos</p>
+      <h2>Control de pasajeros</h2>
       <p className="lede">
-        Presenta pasaporte
-        {visaRequired ? ' y visa' : ''} para el vuelo{' '}
-        <strong>{booking.flightNumber}</strong>.
+        Vuelo <strong>{booking.flightNumber}</strong>
+        {visaRequired ? ' · se solicita visa' : ' · solo pasaporte'}.
       </p>
 
-      <form className="docs-form" onSubmit={onSubmit}>
-        <label>
-          Nombre completo
-          <input
-            value={booking.documents.fullName}
-            onChange={(e) => updateDocuments({ fullName: e.target.value })}
-            placeholder="Como aparece en el pasaporte"
-            autoComplete="name"
-          />
-        </label>
-
-        <div className="field-grid">
-          <label>
-            Nº de pasaporte
-            <input
-              value={booking.documents.passportNumber}
-              onChange={(e) =>
-                updateDocuments({ passportNumber: e.target.value.toUpperCase() })
-              }
-              placeholder="G12345678"
-            />
-          </label>
-          <label>
-            Nacionalidad
-            <input
-              value={booking.documents.nationality}
-              onChange={(e) => updateDocuments({ nationality: e.target.value })}
-              placeholder="México"
-            />
-          </label>
+      <div className="passport">
+        <div className="passport-head">
+          <div>
+            <div className="passport-title">Pasaporte</div>
+            <div style={{ color: 'rgba(230,195,106,0.65)', fontSize: '0.75rem', marginTop: 4 }}>
+              SkyVoyage Immigration
+            </div>
+          </div>
+          <div className="passport-crest">SV</div>
         </div>
 
-        <div className="field-grid">
+        <form className="docs-form" onSubmit={onSubmit}>
           <label>
-            Fecha de nacimiento
+            Nombre completo
             <input
-              type="date"
-              value={booking.documents.birthDate}
-              onChange={(e) => updateDocuments({ birthDate: e.target.value })}
+              value={booking.documents.fullName}
+              onChange={(e) => updateDocuments({ fullName: e.target.value })}
+              placeholder="Como en el pasaporte"
+              autoComplete="name"
             />
           </label>
-          {visaRequired && (
+
+          <div className="field-grid">
             <label>
-              Nº de visa
+              Nº pasaporte
               <input
-                value={booking.documents.visaNumber}
+                value={booking.documents.passportNumber}
                 onChange={(e) =>
-                  updateDocuments({ visaNumber: e.target.value.toUpperCase() })
+                  updateDocuments({ passportNumber: e.target.value.toUpperCase() })
                 }
-                placeholder="VISA-000000"
+                placeholder="G12345678"
               />
             </label>
-          )}
-        </div>
-
-        {visaRequired && (
-          <div className="notice">
-            Viaje internacional detectado: se solicita visa además del pasaporte.
+            <label>
+              Nacionalidad
+              <input
+                value={booking.documents.nationality}
+                onChange={(e) => updateDocuments({ nationality: e.target.value })}
+                placeholder="México"
+              />
+            </label>
           </div>
-        )}
 
-        {error && <p className="form-error">{error}</p>}
+          <div className="field-grid">
+            <label>
+              Nacimiento
+              <input
+                type="date"
+                value={booking.documents.birthDate}
+                onChange={(e) => updateDocuments({ birthDate: e.target.value })}
+              />
+            </label>
+            {visaRequired && (
+              <label>
+                Nº visa
+                <input
+                  value={booking.documents.visaNumber}
+                  onChange={(e) =>
+                    updateDocuments({ visaNumber: e.target.value.toUpperCase() })
+                  }
+                  placeholder="VISA-000000"
+                />
+              </label>
+            )}
+          </div>
 
-        <div className="actions">
-          <button type="button" className="btn ghost" onClick={() => setStep('route')}>
-            Atrás
-          </button>
-          <button type="submit" className="btn primary">
-            Verificar documentos
-          </button>
-        </div>
-      </form>
+          {error && <p className="form-error">{error}</p>}
+
+          <div className="actions">
+            <button type="button" className="btn ghost" onClick={() => setStep('route')}>
+              Atrás
+            </button>
+            <button type="submit" className="btn primary">
+              Verificar
+            </button>
+          </div>
+        </form>
+      </div>
     </motion.section>
   )
 }

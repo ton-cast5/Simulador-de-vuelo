@@ -1,3 +1,3 @@
 # Simulador de Vuelo
 
-App web tipo Focus Flight: reservas un vuelo entre aeropuertos reales (o ruta sorpresa), entregas documentos, eliges asiento en cabina, cortas tú mismo el pase de abordar, y mantienes el foco mientras el avión cruza un globo 3D con puntos de origen/destino correctos, HUD, fases de vuelo, anuncios de cabina con audio, ventanilla con mapa satélite real, aterrizaje y bitácora de vuelos.
+App web de experiencia aérea premium: reservas un vuelo entre aeropuertos reales, entregas documentos, eliges asiento en cabina, cortas tu pase de abordar, y mantienes el foco mientras cruzas el planeta en un globo 3D cinematográfico, con HUD de vuelo, ventanilla satélite, anuncios de cabina y bitácora.

@@ -135,12 +135,12 @@ export function BoardingPass() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <p className="eyebrow">Paso 4 · Boleto</p>
-      <h2>Tu pase de abordar</h2>
+      <p className="eyebrow">04 · Boleto</p>
+      <h2>Pase de abordar</h2>
       <p className="lede">
         {booking.ticketTorn
           ? 'Boleto cortado. Dirígete a la puerta.'
-          : 'Arrastra el talón hacia la derecha para cortar tu boleto.'}
+          : 'Arrastra el talón para cortar tu boleto — como en el aeropuerto.'}
       </p>
 
       <div className={`boarding-pass ${tornAnim ? 'torn' : 'interactive'}`}>
