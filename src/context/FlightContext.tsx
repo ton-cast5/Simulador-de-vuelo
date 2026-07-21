@@ -17,11 +17,13 @@ import {
   type FlightSession,
   type MapStyle,
   type PassengerDocs,
+  type SeatIntent,
   type SessionMinutes,
   type Step,
 } from '../types'
 
 const LOG_KEY = 'skyvoyage-flight-log'
+const HOME_AIRPORT_KEY = 'skyvoyage-home-airport'
 
 interface FlightContextValue {
   step: Step
@@ -29,11 +31,14 @@ interface FlightContextValue {
   booking: FlightBooking
   session: FlightSession
   log: FlightLogEntry[]
+  homeAirportCode: string | null
+  setHomeAirport: (code: string) => void
   setOriginCode: (code: string) => void
   setDestinationCode: (code: string) => void
   setSessionMinutes: (m: SessionMinutes) => void
   pickRandomRoute: () => void
   setSeat: (seat: string) => void
+  setSeatIntent: (intent: SeatIntent) => void
   updateDocuments: (docs: Partial<PassengerDocs>) => void
   verifyDocuments: () => void
   tearTicket: () => void
@@ -58,6 +63,7 @@ const initialBooking = (): FlightBooking => ({
   origin: null,
   destination: null,
   seat: null,
+  seatIntent: 'work',
   documents: emptyDocuments(),
   flightNumber: '',
   gate: '',
@@ -76,9 +82,9 @@ const initialSession = (): FlightSession => ({
   progress: 0,
   paused: false,
   pureMode: false,
-  cabinView: 'globe',
+  cabinView: 'window',
   ambienceOn: true,
-  mapStyle: 'day',
+  mapStyle: '3d',
   announcement: null,
 })
 
@@ -96,13 +102,33 @@ function saveLog(entries: FlightLogEntry[]) {
   localStorage.setItem(LOG_KEY, JSON.stringify(entries.slice(0, 40)))
 }
 
+function loadHomeAirport(): string | null {
+  try {
+    return localStorage.getItem(HOME_AIRPORT_KEY)
+  } catch {
+    return null
+  }
+}
+
+const MAP_STYLE_CYCLE: MapStyle[] = ['3d', 'satellite', 'classic']
+
 export function FlightProvider({ children }: { children: ReactNode }) {
   const [step, setStep] = useState<Step>('welcome')
   const [booking, setBooking] = useState<FlightBooking>(initialBooking)
   const [session, setSession] = useState<FlightSession>(initialSession)
   const [log, setLog] = useState<FlightLogEntry[]>(() => loadLog())
+  const [homeAirportCode, setHomeAirportCode] = useState<string | null>(() => loadHomeAirport())
   const pausedAccum = useRef(0)
   const pauseStarted = useRef<number | null>(null)
+
+  const setHomeAirport = useCallback((code: string) => {
+    setHomeAirportCode(code)
+    try {
+      localStorage.setItem(HOME_AIRPORT_KEY, code)
+    } catch {
+      /* ignore storage errors */
+    }
+  }, [])
 
   const setOriginCode = useCallback((code: string) => {
     const origin = airports.find((a) => a.code === code) ?? null
@@ -133,11 +159,15 @@ export function FlightProvider({ children }: { children: ReactNode }) {
       const meta = generateFlightMeta(b.origin, b.destination)
       return { ...b, ...meta }
     })
-    setStep('documents')
+    setStep('seat')
   }, [])
 
   const setSeat = useCallback((seat: string) => {
     setBooking((b) => ({ ...b, seat }))
+  }, [])
+
+  const setSeatIntent = useCallback((intent: SeatIntent) => {
+    setBooking((b) => ({ ...b, seatIntent: intent }))
   }, [])
 
   const updateDocuments = useCallback((docs: Partial<PassengerDocs>) => {
@@ -165,7 +195,7 @@ export function FlightProvider({ children }: { children: ReactNode }) {
       startedAt: null,
       progress: 0,
       paused: false,
-      cabinView: 'globe',
+      cabinView: 'window',
       announcement: null,
     }))
     setStep('takeoff')
@@ -211,10 +241,11 @@ export function FlightProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const toggleMapStyle = useCallback(() => {
-    setSession((s) => ({
-      ...s,
-      mapStyle: (s.mapStyle === 'day' ? 'night' : 'day') as MapStyle,
-    }))
+    setSession((s) => {
+      const idx = MAP_STYLE_CYCLE.indexOf(s.mapStyle)
+      const next = MAP_STYLE_CYCLE[(idx + 1) % MAP_STYLE_CYCLE.length]
+      return { ...s, mapStyle: next }
+    })
   }, [])
 
   const setAnnouncement = useCallback((text: string | null) => {
@@ -236,6 +267,7 @@ export function FlightProvider({ children }: { children: ReactNode }) {
         originCity: b.origin.city,
         destinationCity: b.destination.city,
         seat: b.seat ?? '—',
+        seatIntent: b.seatIntent,
         passenger: b.documents.fullName,
         distanceKm: b.distanceKm,
         sessionMinutes: b.sessionMinutes,
@@ -271,14 +303,19 @@ export function FlightProvider({ children }: { children: ReactNode }) {
     pauseStarted.current = null
     landedLock.current = false
     window.speechSynthesis?.cancel()
+    const home = homeAirportCode
+      ? airports.find((a) => a.code === homeAirportCode) ?? null
+      : null
     setBooking((b) => ({
       ...initialBooking(),
+      origin: home,
       documents: b.documents,
       sessionMinutes: b.sessionMinutes,
+      seatIntent: b.seatIntent,
     }))
     setSession(initialSession())
     setStep('route')
-  }, [])
+  }, [homeAirportCode])
 
   useEffect(() => {
     if (step !== 'flight' || !session.startedAt) return
@@ -310,11 +347,14 @@ export function FlightProvider({ children }: { children: ReactNode }) {
       booking,
       session,
       log,
+      homeAirportCode,
+      setHomeAirport,
       setOriginCode,
       setDestinationCode,
       setSessionMinutes,
       pickRandomRoute,
       setSeat,
+      setSeatIntent,
       updateDocuments,
       verifyDocuments,
       tearTicket,
@@ -337,11 +377,14 @@ export function FlightProvider({ children }: { children: ReactNode }) {
       booking,
       session,
       log,
+      homeAirportCode,
+      setHomeAirport,
       setOriginCode,
       setDestinationCode,
       setSessionMinutes,
       pickRandomRoute,
       setSeat,
+      setSeatIntent,
       updateDocuments,
       verifyDocuments,
       tearTicket,

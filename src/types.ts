@@ -1,7 +1,6 @@
 export type Step =
   | 'welcome'
   | 'route'
-  | 'documents'
   | 'seat'
   | 'ticket'
   | 'gate'
@@ -10,9 +9,10 @@ export type Step =
   | 'touchdown'
   | 'landed'
 
-export type CabinView = 'globe' | 'window'
-export type MapStyle = 'day' | 'night'
+export type CabinView = 'window' | 'map'
+export type MapStyle = '3d' | 'satellite' | 'classic'
 export type SessionMinutes = 3 | 25 | 45 | 90
+export type SeatIntent = 'study' | 'work' | 'create'
 
 export interface Airport {
   code: string
@@ -36,6 +36,7 @@ export interface FlightBooking {
   origin: Airport | null
   destination: Airport | null
   seat: string | null
+  seatIntent: SeatIntent
   documents: PassengerDocs
   flightNumber: string
   gate: string
@@ -68,6 +69,7 @@ export interface FlightLogEntry {
   originCity: string
   destinationCity: string
   seat: string
+  seatIntent: SeatIntent
   passenger: string
   distanceKm: number
   sessionMinutes: number
@@ -75,16 +77,26 @@ export interface FlightLogEntry {
 }
 
 export const emptyDocuments = (): PassengerDocs => ({
-  fullName: '',
-  passportNumber: '',
-  nationality: '',
+  fullName: 'Passenger',
+  passportNumber: 'SV' + Math.floor(10000000 + Math.random() * 89999999),
+  nationality: 'MX',
   visaNumber: '',
-  birthDate: '',
+  birthDate: '1998-01-01',
 })
 
 export const SESSION_OPTIONS: { minutes: SessionMinutes; label: string; hint: string }[] = [
-  { minutes: 3, label: 'Express', hint: '3 min · demo rápida' },
-  { minutes: 25, label: 'Focus', hint: '25 min · pomodoro' },
-  { minutes: 45, label: 'Deep', hint: '45 min · deep work' },
-  { minutes: 90, label: 'Long haul', hint: '90 min · sesión larga' },
+  { minutes: 3, label: 'Express', hint: '3 min demo' },
+  { minutes: 25, label: 'Short haul', hint: '25 min focus' },
+  { minutes: 45, label: 'Regional', hint: '45 min deep' },
+  { minutes: 90, label: 'Long haul', hint: '90 min block' },
+]
+
+export const SEAT_INTENTS: {
+  id: SeatIntent
+  label: string
+  hint: string
+}[] = [
+  { id: 'study', label: 'Study', hint: 'Reading, exam prep' },
+  { id: 'work', label: 'Work', hint: 'Tasks & deep work' },
+  { id: 'create', label: 'Create', hint: 'Writing, drawing' },
 ]

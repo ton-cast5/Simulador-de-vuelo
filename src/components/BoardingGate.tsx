@@ -1,63 +1,53 @@
-import { motion } from 'framer-motion'
 import { useFlight } from '../context/FlightContext'
-
-import { unlockCabinAudio } from '../utils/cabinAudio'
+import { unlockCabinAudio, playChime } from '../utils/cabinAudio'
+import { PageMotion } from './PageMotion'
 
 export function BoardingGate() {
-  const { booking, setStep, startFlight } = useFlight()
+  const { booking, startFlight, setStep } = useFlight()
 
-  const onBoard = async () => {
+  const board = async () => {
     await unlockCabinAudio()
+    playChime()
     startFlight()
   }
 
   return (
-    <motion.section
-      className="panel gate glass"
-      initial={{ opacity: 0, scale: 0.97 }}
-      animate={{ opacity: 1, scale: 1 }}
-    >
-      <p className="eyebrow">05 · Embarque</p>
-      <h2>Puerta {booking.gate}</h2>
-      <p className="lede">
-        Todo verificado. {booking.sessionMinutes} min a bordo rumbo a{' '}
-        {booking.destination?.city}.
-      </p>
+    <PageMotion className="panel gate-screen">
+      <p className="eyebrow">04 · Gate</p>
+      <h2>Gate {booking.gate}</h2>
+      <p className="lede">Final call. Cabin doors closing.</p>
 
       <div className="gate-board">
-        <div className="gate-row">
-          <span>Vuelo</span>
-          <strong>{booking.flightNumber}</strong>
+        <div className="row">
+          <span>Flight</span>
+          <span className="val">{booking.flightNumber}</span>
         </div>
-        <div className="gate-row">
-          <span>Destino</span>
-          <strong>
-            {booking.destination?.code} · {booking.destination?.city}
-          </strong>
+        <div className="row">
+          <span>Route</span>
+          <span className="val">
+            {booking.origin?.code} → {booking.destination?.code}
+          </span>
         </div>
-        <div className="gate-row">
-          <span>Asiento</span>
-          <strong>{booking.seat}</strong>
+        <div className="row">
+          <span>Seat</span>
+          <span className="val">{booking.seat}</span>
         </div>
-        <div className="gate-row">
-          <span>Estado</span>
-          <strong className="status-ok">ABORDANDO</strong>
+        <div className="row">
+          <span>Boarding</span>
+          <span className="val">{booking.boardingTime}</span>
         </div>
       </div>
 
-      <div className="jetway">
-        <div className="jetway-tunnel" />
-        <div className="jetway-door">INGRESO AL AVIÓN</div>
-      </div>
+      <p className="doors-msg">Cabin doors closed. Ready for takeoff.</p>
 
       <div className="actions">
         <button type="button" className="btn ghost" onClick={() => setStep('ticket')}>
-          Atrás
+          Back
         </button>
-        <button type="button" className="btn primary" onClick={onBoard}>
-          Abordar · despegar
+        <button type="button" className="btn primary" onClick={board}>
+          Board aircraft
         </button>
       </div>
-    </motion.section>
+    </PageMotion>
   )
 }

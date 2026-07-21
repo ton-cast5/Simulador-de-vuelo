@@ -59,7 +59,7 @@ export function GlobeScene({
       list.push({
         lat: origin.lat,
         lng: origin.lon,
-        color: '#7ee0c8',
+        color: '#5b8fff',
         label: `${origin.code} · ${origin.city}`,
         size: 0.7,
       })
@@ -68,7 +68,7 @@ export function GlobeScene({
       list.push({
         lat: destination.lat,
         lng: destination.lon,
-        color: '#e6c36a',
+        color: '#2f6fed',
         label: `${destination.code} · ${destination.city}`,
         size: 0.7,
       })
@@ -84,7 +84,7 @@ export function GlobeScene({
         startLng: origin.lon,
         endLat: destination.lat,
         endLng: destination.lon,
-        color: ['#e6c36a', '#f0d48a'],
+        color: ['#2f6fed', '#8eb6ff'],
       },
     ]
   }, [origin, destination])
@@ -92,8 +92,8 @@ export function GlobeScene({
   const rings = useMemo(() => {
     if (!origin || !destination) return []
     return [
-      { lat: origin.lat, lng: origin.lon, color: '#7ee0c8', maxR: 3.2, prop: 0 },
-      { lat: destination.lat, lng: destination.lon, color: '#e6c36a', maxR: 3.2, prop: 0 },
+      { lat: origin.lat, lng: origin.lon, color: '#5b8fff', maxR: 3.2, prop: 0 },
+      { lat: destination.lat, lng: destination.lon, color: '#2f6fed', maxR: 3.2, prop: 0 },
     ]
   }, [origin, destination])
 
@@ -130,8 +130,8 @@ export function GlobeScene({
   const labels = useMemo(() => {
     if (!origin || !destination) return []
     return [
-      { lat: origin.lat, lng: origin.lon, text: origin.code, color: '#7ee0c8' },
-      { lat: destination.lat, lng: destination.lon, text: destination.code, color: '#e6c36a' },
+      { lat: origin.lat, lng: origin.lon, text: origin.code, color: '#5b8fff' },
+      { lat: destination.lat, lng: destination.lon, text: destination.code, color: '#2f6fed' },
     ]
   }, [origin, destination])
 

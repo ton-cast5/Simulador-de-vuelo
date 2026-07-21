@@ -2,7 +2,6 @@ import { AnimatePresence } from 'framer-motion'
 import { FlightProvider, useFlight } from './context/FlightContext'
 import { Welcome } from './components/Welcome'
 import { RouteSelect } from './components/RouteSelect'
-import { DocumentsCheck } from './components/DocumentsCheck'
 import { SeatSelection } from './components/SeatSelection'
 import { BoardingPass } from './components/BoardingPass'
 import { BoardingGate } from './components/BoardingGate'
@@ -10,87 +9,62 @@ import { TakeoffSequence } from './components/TakeoffSequence'
 import { FlightView } from './components/FlightView'
 import { TouchdownSequence } from './components/TouchdownSequence'
 import { Landing } from './components/Landing'
-import { GlobeScene } from './components/GlobeScene'
 import './App.css'
 
-const STEPS = [
-  { id: 'route', label: 'Ruta', short: '1' },
-  { id: 'documents', label: 'Docs', short: '2' },
-  { id: 'seat', label: 'Asiento', short: '3' },
-  { id: 'ticket', label: 'Boleto', short: '4' },
-  { id: 'gate', label: 'Puerta', short: '5' },
-  { id: 'flight', label: 'Vuelo', short: '6' },
-  { id: 'landed', label: 'Llegada', short: '7' },
-] as const
+const DOTS = ['welcome', 'route', 'seat', 'ticket', 'gate', 'flight', 'landed'] as const
 
 function Shell() {
-  const { step, booking, session } = useFlight()
+  const { step } = useFlight()
   const cinematic = step === 'takeoff' || step === 'touchdown'
   const immersive = step === 'flight' || cinematic
-  const showBgGlobe = !immersive
-  const highlightId =
-    step === 'takeoff' ? 'flight' : step === 'touchdown' ? 'landed' : step
-  const highlightIdx = STEPS.findIndex((x) => x.id === highlightId)
+  const highlight =
+    step === 'takeoff' || step === 'flight'
+      ? 'flight'
+      : step === 'touchdown'
+        ? 'landed'
+        : step
+  const idx = DOTS.indexOf(highlight as (typeof DOTS)[number])
 
   return (
     <div
       className={`app-shell step-${step} ${immersive ? 'immersive' : ''} ${cinematic ? 'cinematic' : ''}`}
     >
-      {showBgGlobe && (
-        <div className="world-bg" aria-hidden>
-          <GlobeScene
-            origin={booking.origin}
-            destination={booking.destination}
-            mode={booking.origin && booking.destination ? 'preview' : 'idle'}
-            mapStyle={session.mapStyle}
-            className="globe-canvas world-globe"
-          />
-          <div className="world-veil" />
-        </div>
-      )}
+      <div className="phone-frame">
+        {!immersive && (
+          <header className="topbar">
+            <div className="brand">
+              <span className="brand-mark" aria-hidden />
+              <span>SkyVoyage</span>
+            </div>
+            {step !== 'welcome' && (
+              <div className="step-dots" aria-hidden>
+                {DOTS.slice(1).map((_, i) => (
+                  <i key={DOTS[i + 1]} className={i < idx ? 'on' : ''} />
+                ))}
+              </div>
+            )}
+          </header>
+        )}
 
-      {!immersive && (
-        <header className="topbar">
-          <div className="brand">
-            <span className="brand-mark" aria-hidden />
-            <span>SkyVoyage</span>
+        <AnimatePresence mode="wait">
+          {step === 'takeoff' && <TakeoffSequence key="takeoff" />}
+          {step === 'touchdown' && <TouchdownSequence key="touchdown" />}
+        </AnimatePresence>
+
+        <main className={`layout ${immersive ? 'layout-flight' : ''}`}>
+          <div className="stage">
+            <AnimatePresence mode="wait">
+              {step === 'welcome' && <Welcome key="welcome" />}
+              {step === 'route' && <RouteSelect key="route" />}
+              {step === 'seat' && <SeatSelection key="seat" />}
+              {step === 'ticket' && <BoardingPass key="ticket" />}
+              {step === 'gate' && <BoardingGate key="gate" />}
+              {step === 'flight' && <FlightView key="flight" />}
+              {step === 'landed' && <Landing key="landed" />}
+            </AnimatePresence>
           </div>
-          {step !== 'welcome' && (
-            <nav className="stepper" aria-label="Progreso del viaje">
-              {STEPS.map((s, i) => (
-                <span
-                  key={s.id}
-                  className={`step-pill ${i <= highlightIdx ? 'on' : ''} ${s.id === highlightId ? 'current' : ''}`}
-                >
-                  <span className="step-full">{s.label}</span>
-                  <span className="step-short">{s.short}</span>
-                </span>
-              ))}
-            </nav>
-          )}
-        </header>
-      )}
-
-      {/* Fullscreen cinematics — outside constrained stage */}
-      <AnimatePresence mode="wait">
-        {step === 'takeoff' && <TakeoffSequence key="takeoff" />}
-        {step === 'touchdown' && <TouchdownSequence key="touchdown" />}
-      </AnimatePresence>
-
-      <main className={`layout ${immersive ? 'layout-flight' : ''} step-${step}`}>
-        <div className="stage">
-          <AnimatePresence mode="wait">
-            {step === 'welcome' && <Welcome key="welcome" />}
-            {step === 'route' && <RouteSelect key="route" />}
-            {step === 'documents' && <DocumentsCheck key="documents" />}
-            {step === 'seat' && <SeatSelection key="seat" />}
-            {step === 'ticket' && <BoardingPass key="ticket" />}
-            {step === 'gate' && <BoardingGate key="gate" />}
-            {step === 'flight' && <FlightView key="flight" />}
-            {step === 'landed' && <Landing key="landed" />}
-          </AnimatePresence>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

@@ -1,15 +1,17 @@
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useFlight } from '../context/FlightContext'
 import { formatDistance, formatDuration } from '../utils/geo'
 import { useCabinAmbience } from '../hooks/useCabinAmbience'
 import { useCabinAnnouncements } from '../hooks/useCabinAnnouncements'
+import { setCabinVolume } from '../utils/cabinAudio'
+import { CabinWindow3D } from './CabinWindow3D'
 import { GlobeScene } from './GlobeScene'
-import { WindowSeat } from './WindowSeat'
 
 function phaseLabel(progress: number) {
-  if (progress < 0.12) return 'Despegue'
-  if (progress < 0.7) return 'Crucero'
-  if (progress < 0.92) return 'Descenso'
+  if (progress < 0.12) return 'Climb'
+  if (progress < 0.7) return 'Cruise'
+  if (progress < 0.92) return 'Descent'
   return 'Final'
 }
 
@@ -25,6 +27,7 @@ export function FlightView() {
     setAnnouncement,
     completeLanding,
   } = useFlight()
+  const [volume, setVolume] = useState(0.38)
 
   useCabinAmbience(session.ambienceOn && !session.paused)
   useCabinAnnouncements(
@@ -35,66 +38,83 @@ export function FlightView() {
     setAnnouncement,
   )
 
-  const remainingMs =
-    booking.sessionMinutes * 60 * 1000 * (1 - session.progress)
+  useEffect(() => {
+    setCabinVolume(volume)
+  }, [volume])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') togglePureMode()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [togglePureMode])
+
+  const remainingMs = booking.sessionMinutes * 60 * 1000 * (1 - session.progress)
   const remainingKm = booking.distanceKm * (1 - session.progress)
   const phase = phaseLabel(session.progress)
+  const origin = booking.origin!
+  const destination = booking.destination!
+
+  const mapLabel =
+    session.mapStyle === '3d' ? '3D' : session.mapStyle === 'satellite' ? 'Sat' : 'Map'
 
   return (
     <motion.section
       className={`flight-immersive ${session.pureMode ? 'pure' : ''}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      onDoubleClick={togglePureMode}
     >
-      {session.cabinView === 'globe' ? (
-        <GlobeScene
-          origin={booking.origin}
-          destination={booking.destination}
-          mode="flight"
+      {session.cabinView === 'window' ? (
+        <CabinWindow3D
+          origin={origin}
+          destination={destination}
           progress={session.progress}
           mapStyle={session.mapStyle}
-          className="globe-canvas flight-globe"
         />
       ) : (
-        <WindowSeat
-          progress={session.progress}
-          origin={booking.origin}
-          destination={booking.destination}
-        />
+        <div className="flight-map-fallback">
+          <GlobeScene
+            origin={origin}
+            destination={destination}
+            mode="flight"
+            progress={session.progress}
+            mapStyle={session.mapStyle === 'classic' ? 'night' : 'day'}
+            className="globe-canvas flight-globe"
+          />
+        </div>
       )}
 
       <div className="flight-overlay">
         {!session.pureMode && (
           <div className="flight-chrome">
             <div className="flight-route-pill">
-              {booking.origin?.code}
+              {origin.code}
               <em>→</em>
-              {booking.destination?.code}
+              {destination.code}
               <em>· {booking.flightNumber}</em>
             </div>
             <div className="flight-tools">
               <button
                 type="button"
-                className={`chip ${session.cabinView === 'globe' ? 'on' : ''}`}
-                onClick={() => setCabinView('globe')}
-              >
-                Mapa
-              </button>
-              <button
-                type="button"
                 className={`chip ${session.cabinView === 'window' ? 'on' : ''}`}
                 onClick={() => setCabinView('window')}
               >
-                Ventana
+                Window
+              </button>
+              <button
+                type="button"
+                className={`chip ${session.cabinView === 'map' ? 'on' : ''}`}
+                onClick={() => setCabinView('map')}
+              >
+                Route
               </button>
               <button type="button" className="chip" onClick={toggleMapStyle}>
-                {session.mapStyle === 'day' ? 'Día' : 'Noche'}
+                {mapLabel}
               </button>
               <button type="button" className="chip" onClick={toggleAmbience}>
-                {session.ambienceOn ? 'Audio' : 'Mute'}
-              </button>
-              <button type="button" className="chip" onClick={togglePureMode}>
-                Pure
+                {session.ambienceOn ? 'Sound' : 'Mute'}
               </button>
             </div>
           </div>
@@ -109,7 +129,7 @@ export function FlightView() {
               exit={{ opacity: 0 }}
               key={session.announcement}
             >
-              <span className="cabin-announce-tag">Cabina</span>
+              <span className="cabin-announce-tag">Cabin</span>
               <p>{session.announcement}</p>
             </motion.div>
           )}
@@ -118,39 +138,52 @@ export function FlightView() {
         <div className="flight-bottom">
           <div className="progress-rail">
             <div className="progress-fill" style={{ width: `${session.progress * 100}%` }} />
-            <div className="phase-marks" aria-hidden>
-              <i style={{ left: '12%' }} />
-              <i style={{ left: '70%' }} />
-              <i style={{ left: '92%' }} />
-            </div>
           </div>
 
           <div className="flight-hud">
             <div className="hud-card">
-              <span>Tiempo restante</span>
+              <span>Time remaining</span>
               <strong>{formatDuration(remainingMs)}</strong>
             </div>
             <div className="hud-card">
-              <span>Distancia restante</span>
+              <span>Distance left</span>
               <strong>{formatDistance(remainingKm)}</strong>
             </div>
-            <div className="hud-card phase">
-              <strong>
-                {phase} · {Math.round(session.progress * 100)}% · asiento {booking.seat}
-              </strong>
-            </div>
+            {!session.pureMode && (
+              <div className="hud-card phase">
+                <strong>
+                  {phase} · {Math.round(session.progress * 100)}% · {booking.seat} ·{' '}
+                  {booking.seatIntent}
+                </strong>
+                {session.ambienceOn && (
+                  <label className="vol-row">
+                    <span>Cabin volume</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      value={volume}
+                      onChange={(e) => setVolume(Number(e.target.value))}
+                      onClick={(e) => e.stopPropagation()}
+                      onDoubleClick={(e) => e.stopPropagation()}
+                    />
+                  </label>
+                )}
+              </div>
+            )}
           </div>
 
           {!session.pureMode && (
             <div className="flight-actions">
               <button type="button" className="btn ghost" onClick={togglePause}>
-                {session.paused ? 'Reanudar' : 'Pausar'}
+                {session.paused ? 'Resume' : 'Pause'}
               </button>
               <button type="button" className="btn ghost" onClick={togglePureMode}>
-                Modo puro
+                Pure
               </button>
               <button type="button" className="btn primary" onClick={completeLanding}>
-                Aterrizar
+                Land
               </button>
             </div>
           )}
@@ -158,13 +191,11 @@ export function FlightView() {
 
         {session.pureMode && (
           <button type="button" className="pure-exit" onClick={togglePureMode}>
-            Salir · {formatDuration(remainingMs)}
+            Exit · {formatDuration(remainingMs)}
           </button>
         )}
 
-        {session.paused && !session.pureMode && (
-          <div className="paused-badge">En espera</div>
-        )}
+        {session.paused && !session.pureMode && <div className="paused-badge">Paused</div>}
       </div>
     </motion.section>
   )
